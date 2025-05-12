@@ -1,9 +1,9 @@
 
-import { Basketball, Calendar, Users, Clock } from 'lucide-react';
+import { Activity, Calendar, Users, Clock } from 'lucide-react';
 
 const features = [
   {
-    icon: <Basketball size={48} className="text-baseline-yellow" />,
+    icon: <Activity size={48} className="text-baseline-yellow" />,
     title: "Elite Coaching",
     description: "Learn from coaches with professional and international experience."
   },

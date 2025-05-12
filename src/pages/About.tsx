@@ -1,8 +1,7 @@
-
 import { useEffect, useRef } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { Basketball } from 'lucide-react';
+import { Activity } from 'lucide-react';
 
 const About = () => {
   const statRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -145,7 +144,7 @@ const About = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto">
             <div className="flex justify-center mb-8">
-              <Basketball size={48} className="text-baseline-yellow" />
+              <Activity size={48} className="text-baseline-yellow" />
             </div>
             <h2 className="text-3xl md:text-4xl font-display font-bold text-center mb-8">
               Our Training <span className="gradient-text">Philosophy</span>
