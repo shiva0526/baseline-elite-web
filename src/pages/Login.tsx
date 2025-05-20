@@ -92,7 +92,7 @@ const Login = () => {
               aria-label="Toggle parent" 
               className={`flex items-center gap-2 w-32 justify-center ${role === "parent" ? "bg-baseline-yellow text-black" : ""}`}
             >
-              <Users size={16} />
+              <User size={16} />
               Parent
             </ToggleGroupItem>
           </ToggleGroup>
