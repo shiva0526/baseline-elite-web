@@ -47,7 +47,7 @@ const Navbar = () => {
         </Link>
         
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-8">
+        <nav className="hidden md:flex items-center space-x-4">
           {navLinks.map((link) => (
             <Link 
               key={link.name}
@@ -57,7 +57,10 @@ const Navbar = () => {
               {link.name}
             </Link>
           ))}
-          <Button className="button-primary ml-4">Join Now</Button>
+          <Link to="/login">
+            <Button variant="ghost" className="text-white hover:text-baseline-yellow">Login</Button>
+          </Link>
+          <Button className="button-primary ml-2">Join Now</Button>
         </nav>
         
         {/* Mobile Menu Button */}
@@ -90,6 +93,13 @@ const Navbar = () => {
                 {link.name}
               </Link>
             ))}
+            <Link 
+              to="/login" 
+              onClick={() => setIsOpen(false)}
+              className="text-white hover:text-baseline-yellow text-2xl font-semibold transition-all duration-300"
+            >
+              Login
+            </Link>
             <Button 
               className="button-primary w-full mt-8" 
               onClick={() => setIsOpen(false)}
