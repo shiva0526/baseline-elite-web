@@ -32,40 +32,38 @@ const Login = () => {
     setError('');
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     
-    try {
-      // Mock authentication
-      if (email === 'coach@baseline.com' && password === 'coach123' && selectedRole === 'coach') {
-        // Store user role in localStorage
-        localStorage.setItem('userRole', 'coach');
-        
-        toast({
-          title: "Login successful!",
-          description: "Welcome back, Coach!",
-        });
-        
-        // Redirect to coach dashboard
-        navigate('/coach-dashboard');
-      } else if (email === 'parent@baseline.com' && password === 'parent123' && selectedRole === 'parent') {
-        // Store user role in localStorage
-        localStorage.setItem('userRole', 'parent');
-        
-        toast({
-          title: "Login successful!",
-          description: "Welcome to your dashboard!",
-        });
-        
-        // Redirect to parent dashboard
-        navigate('/parent-dashboard');
-      } else {
-        setError('Invalid email or password');
-      }
-    } catch (err) {
-      setError('An error occurred during login');
-      console.error('Login error:', err);
+    console.log('Attempting login with:', { email, password, role: selectedRole });
+    
+    // Mock authentication with hardcoded credentials
+    if (email === 'coach@baseline.com' && password === 'coach123' && selectedRole === 'coach') {
+      // Store user role in localStorage
+      localStorage.setItem('userRole', 'coach');
+      
+      toast({
+        title: "Login successful!",
+        description: "Welcome back, Coach!",
+      });
+      
+      // Redirect to coach dashboard
+      navigate('/coach-dashboard');
+    } else if (email === 'parent@baseline.com' && password === 'parent123' && selectedRole === 'parent') {
+      // Store user role in localStorage
+      localStorage.setItem('userRole', 'parent');
+      
+      toast({
+        title: "Login successful!",
+        description: "Welcome to your dashboard!",
+      });
+      
+      // Redirect to parent dashboard
+      navigate('/parent-dashboard');
+    } else {
+      setError('Invalid email or password');
+      console.log('Login failed: Invalid credentials');
     }
   };
 

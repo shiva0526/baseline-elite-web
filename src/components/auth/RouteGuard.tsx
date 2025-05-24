@@ -12,16 +12,26 @@ const RouteGuard = ({ children, requiredRole }: RouteGuardProps) => {
   const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
-    // This would typically check an authentication token from localStorage
-    // For demonstration, we'll check for a 'userRole' in localStorage
+    // Check for userRole in localStorage
     const userRole = localStorage.getItem('userRole');
+    console.log('RouteGuard checking role:', { userRole, requiredRole });
     
-    if (!userRole || userRole !== requiredRole) {
-      // Not logged in or wrong role, redirect to login
+    if (!userRole) {
+      // Not logged in, redirect to login
+      console.log('No user role found, redirecting to login');
       navigate('/login', { replace: true });
       return;
     }
     
+    if (userRole !== requiredRole) {
+      // Wrong role, redirect to login
+      console.log('Wrong role, redirecting to login');
+      navigate('/login', { replace: true });
+      return;
+    }
+    
+    // User is authorized
+    console.log('User authorized');
     setAuthorized(true);
   }, [navigate, requiredRole]);
 

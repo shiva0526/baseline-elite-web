@@ -1,15 +1,22 @@
 
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
   
   useEffect(() => {
+    // Check if user is logged in
+    const role = localStorage.getItem('userRole');
+    setUserRole(role);
+    
+    // Handle scroll for transparent header
     const handleScroll = () => {
       if (window.scrollY > 20) {
         setScrolled(true);
@@ -20,7 +27,7 @@ const Navbar = () => {
     
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [location.pathname]); // Re-check when route changes
   
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -34,6 +41,18 @@ const Navbar = () => {
   
   const handleJoinClick = () => {
     navigate('/programs');
+  };
+  
+  const handleLoginClick = () => {
+    navigate('/login');
+  };
+
+  const handleDashboardClick = () => {
+    if (userRole === 'coach') {
+      navigate('/coach-dashboard');
+    } else if (userRole === 'parent') {
+      navigate('/parent-dashboard');
+    }
   };
   
   return (
@@ -64,10 +83,18 @@ const Navbar = () => {
             </Link>
           ))}
           <div className="flex items-center space-x-4">
-            <Link to="/login">
-              <Button className="button-outline">Login</Button>
-            </Link>
-            <Button className="button-primary" onClick={handleJoinClick}>Join Now</Button>
+            {userRole ? (
+              <Button className="button-outline" onClick={handleDashboardClick}>
+                Dashboard
+              </Button>
+            ) : (
+              <Button className="button-outline" onClick={handleLoginClick}>
+                Login
+              </Button>
+            )}
+            <Button className="button-primary" onClick={handleJoinClick}>
+              Join Now
+            </Button>
           </div>
         </nav>
         
@@ -102,14 +129,21 @@ const Navbar = () => {
               </Link>
             ))}
             <div className="flex flex-col space-y-4 mt-8">
-              <Link to="/login">
+              {userRole ? (
                 <Button 
                   className="button-outline w-full" 
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => {
+                    setIsOpen(false);
+                    handleDashboardClick();
+                  }}
                 >
-                  Login
+                  Dashboard
                 </Button>
-              </Link>
+              ) : (
+                <Link to="/login" onClick={() => setIsOpen(false)}>
+                  <Button className="button-outline w-full">Login</Button>
+                </Link>
+              )}
               <Button 
                 className="button-primary w-full"
                 onClick={() => {
