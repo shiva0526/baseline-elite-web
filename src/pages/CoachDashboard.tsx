@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -127,9 +126,18 @@ const CoachDashboard = () => {
     // Update player's attended classes
     setPlayers(prev => prev.map(player => {
       if (player.id === playerId) {
-        const daysAttended = attendance[playerId]?.length || 0;
-        const newDaysAttended = dayIndex === -1 ? daysAttended + 1 : daysAttended - 1;
-        return { ...player, attendedClasses: player.attendedClasses + (dayIndex === -1 ? 1 : -1) };
+        // Get the updated attendance status after the change
+        const updatedAttendance = attendance[playerId] || [];
+        const isDayPresent = updatedAttendance.includes(day);
+        
+        // If the day wasn't in the attendance before, we're adding it now
+        // Otherwise, we're removing it
+        const attendanceChange = isDayPresent ? 0 : 1;
+        
+        return { 
+          ...player, 
+          attendedClasses: player.attendedClasses + attendanceChange 
+        };
       }
       return player;
     }));
