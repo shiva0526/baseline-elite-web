@@ -10,6 +10,10 @@ import Programs from "./pages/Programs";
 import Gallery from "./pages/Gallery";
 import Schedule from "./pages/Schedule";
 import Contact from "./pages/Contact";
+import Tournaments from "./pages/Tournaments";
+import Login from "./pages/Login";
+import CoachDashboard from "./pages/CoachDashboard";
+import ParentDashboard from "./pages/ParentDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,7 +30,11 @@ const App = () => (
           <Route path="/programs" element={<Programs />} />
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/schedule" element={<Schedule />} />
+          <Route path="/tournaments" element={<Tournaments />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/coach-dashboard" element={<CoachDashboard />} />
+          <Route path="/parent-dashboard" element={<ParentDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

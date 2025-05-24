@@ -27,6 +27,7 @@ const Navbar = () => {
     { name: 'Programs', path: '/programs' },
     { name: 'Gallery', path: '/gallery' },
     { name: 'Schedule', path: '/schedule' },
+    { name: 'Tournament', path: '/tournaments' },
     { name: 'Contact', path: '/contact' },
   ];
   
@@ -57,7 +58,12 @@ const Navbar = () => {
               {link.name}
             </Link>
           ))}
-          <Button className="button-primary ml-4">Join Now</Button>
+          <div className="flex items-center space-x-4">
+            <Link to="/login">
+              <Button className="button-outline">Login</Button>
+            </Link>
+            <Button className="button-primary">Join Now</Button>
+          </div>
         </nav>
         
         {/* Mobile Menu Button */}
@@ -90,12 +96,22 @@ const Navbar = () => {
                 {link.name}
               </Link>
             ))}
-            <Button 
-              className="button-primary w-full mt-8" 
-              onClick={() => setIsOpen(false)}
-            >
-              Join Now
-            </Button>
+            <div className="flex flex-col space-y-4 mt-8">
+              <Link to="/login">
+                <Button 
+                  className="button-outline w-full" 
+                  onClick={() => setIsOpen(false)}
+                >
+                  Login
+                </Button>
+              </Link>
+              <Button 
+                className="button-primary w-full" 
+                onClick={() => setIsOpen(false)}
+              >
+                Join Now
+              </Button>
+            </div>
           </div>
         </div>
       )}
