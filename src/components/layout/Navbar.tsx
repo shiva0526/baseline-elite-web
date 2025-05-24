@@ -37,7 +37,7 @@ const Navbar = () => {
     { name: 'Programs', path: '/programs' },
     { name: 'Gallery', path: '/gallery' },
     { name: 'Schedule', path: '/schedule' },
-    { name: 'Tournament', path: '/tournaments' },
+    { name: 'Tournaments', path: '/tournaments' },
     { name: 'Contact', path: '/contact' },
   ];
   
@@ -89,7 +89,9 @@ const Navbar = () => {
             <Link 
               key={link.name}
               to={link.path}
-              className="text-white hover:text-baseline-yellow font-medium transition-colors duration-300"
+              className={`text-white hover:text-baseline-yellow font-medium transition-colors duration-300 ${
+                location.pathname === link.path ? 'text-baseline-yellow' : ''
+              }`}
             >
               {link.name}
             </Link>
@@ -139,7 +141,7 @@ const Navbar = () => {
                 onClick={() => setIsOpen(false)}
                 className={`text-white hover:text-baseline-yellow text-2xl font-semibold transition-all duration-300 ${
                   isOpen ? 'animate-slide-in' : ''
-                }`}
+                } ${location.pathname === link.path ? 'text-baseline-yellow' : ''}`}
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 {link.name}

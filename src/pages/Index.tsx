@@ -15,11 +15,26 @@ const Index = () => {
 
   useEffect(() => {
     // Check for announcements
-    const storedAnnouncement = localStorage.getItem('announcement');
-    if (storedAnnouncement) {
-      setAnnouncement(storedAnnouncement);
-      setShowAnnouncement(true);
-    }
+    const fetchAnnouncement = () => {
+      const storedAnnouncement = localStorage.getItem('announcement');
+      if (storedAnnouncement) {
+        setAnnouncement(storedAnnouncement);
+        setShowAnnouncement(true);
+      }
+    };
+    
+    // Initial check
+    fetchAnnouncement();
+    
+    // Listen for storage events to update in real time
+    const handleStorageChange = () => {
+      fetchAnnouncement();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const closeAnnouncement = () => {

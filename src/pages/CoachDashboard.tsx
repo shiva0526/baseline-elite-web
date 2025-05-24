@@ -107,6 +107,19 @@ const CoachDashboard = () => {
     if (storedRegistrations) {
       setRegistrations(JSON.parse(storedRegistrations));
     }
+    
+    // Listen for storage events to update data in real time
+    const handleStorageChange = () => {
+      const registrationsData = localStorage.getItem('tournamentRegistrations');
+      if (registrationsData) {
+        setRegistrations(JSON.parse(registrationsData));
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
   
   const handleAttendanceChange = (playerId: number, day: string) => {
@@ -245,6 +258,9 @@ const CoachDashboard = () => {
       requiredFields: []
     });
     
+    // Trigger storage event to update other components
+    window.dispatchEvent(new Event('storage'));
+    
     toast({
       title: "Tournament created",
       description: "The tournament has been published to the website.",
@@ -262,6 +278,9 @@ const CoachDashboard = () => {
       const updatedTournament = { ...upcomingTournament, status: 'cancelled' as const };
       localStorage.setItem('upcomingTournament', JSON.stringify(updatedTournament));
       setUpcomingTournament(updatedTournament);
+      
+      // Trigger storage event to update other components
+      window.dispatchEvent(new Event('storage'));
       
       toast({
         title: "Tournament cancelled",
@@ -283,9 +302,23 @@ const CoachDashboard = () => {
       return;
     }
     
+    // Filter registrations for the current tournament
+    const currentTournamentRegistrations = registrations.filter(
+      reg => reg.tournamentId === upcomingTournament?.id
+    );
+    
+    if (currentTournamentRegistrations.length === 0) {
+      toast({
+        title: "No data to export",
+        description: "There are no registrations for this tournament yet.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     // Create CSV content
-    const headers = Object.keys(registrations[0]).join(',');
-    const rows = registrations.map(reg => Object.values(reg).join(','));
+    const headers = Object.keys(currentTournamentRegistrations[0]).join(',');
+    const rows = currentTournamentRegistrations.map(reg => Object.values(reg).join(','));
     const csvContent = [headers, ...rows].join('\n');
     
     // Create and trigger download
