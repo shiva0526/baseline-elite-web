@@ -1,12 +1,14 @@
 
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useToast } from "@/components/ui/use-toast";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -55,6 +57,16 @@ const Navbar = () => {
     }
   };
   
+  const handleLogout = () => {
+    localStorage.removeItem('userRole');
+    setUserRole(null);
+    toast({
+      title: "Logged out successfully",
+      description: "You have been logged out of your account.",
+    });
+    navigate('/', { replace: true });
+  };
+  
   return (
     <header 
       className={`fixed w-full top-0 z-50 transition-all duration-300 ${
@@ -84,9 +96,14 @@ const Navbar = () => {
           ))}
           <div className="flex items-center space-x-4">
             {userRole ? (
-              <Button className="button-outline" onClick={handleDashboardClick}>
-                Dashboard
-              </Button>
+              <div className="flex items-center space-x-4">
+                <Button className="button-outline" onClick={handleDashboardClick}>
+                  Dashboard
+                </Button>
+                <Button variant="ghost" onClick={handleLogout} className="text-gray-300">
+                  <LogOut size={18} className="mr-2" /> Logout
+                </Button>
+              </div>
             ) : (
               <Button className="button-outline" onClick={handleLoginClick}>
                 Login
@@ -130,15 +147,27 @@ const Navbar = () => {
             ))}
             <div className="flex flex-col space-y-4 mt-8">
               {userRole ? (
-                <Button 
-                  className="button-outline w-full" 
-                  onClick={() => {
-                    setIsOpen(false);
-                    handleDashboardClick();
-                  }}
-                >
-                  Dashboard
-                </Button>
+                <>
+                  <Button 
+                    className="button-outline w-full" 
+                    onClick={() => {
+                      setIsOpen(false);
+                      handleDashboardClick();
+                    }}
+                  >
+                    Dashboard
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => {
+                      setIsOpen(false);
+                      handleLogout();
+                    }}
+                    className="w-full text-gray-300"
+                  >
+                    <LogOut size={18} className="mr-2" /> Logout
+                  </Button>
+                </>
               ) : (
                 <Link to="/login" onClick={() => setIsOpen(false)}>
                   <Button className="button-outline w-full">Login</Button>

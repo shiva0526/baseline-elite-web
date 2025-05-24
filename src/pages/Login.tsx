@@ -18,6 +18,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleRoleSelect = (role: Role) => {
     setSelectedRole(role);
@@ -35,36 +36,41 @@ const Login = () => {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
     
     console.log('Attempting login with:', { email, password, role: selectedRole });
     
-    // Mock authentication with hardcoded credentials
-    if (email === 'coach@baseline.com' && password === 'coach123' && selectedRole === 'coach') {
-      // Store user role in localStorage
-      localStorage.setItem('userRole', 'coach');
-      
-      toast({
-        title: "Login successful!",
-        description: "Welcome back, Coach!",
-      });
-      
-      // Redirect to coach dashboard
-      navigate('/coach-dashboard');
-    } else if (email === 'parent@baseline.com' && password === 'parent123' && selectedRole === 'parent') {
-      // Store user role in localStorage
-      localStorage.setItem('userRole', 'parent');
-      
-      toast({
-        title: "Login successful!",
-        description: "Welcome to your dashboard!",
-      });
-      
-      // Redirect to parent dashboard
-      navigate('/parent-dashboard');
-    } else {
-      setError('Invalid email or password');
-      console.log('Login failed: Invalid credentials');
-    }
+    // Simulate network delay
+    setTimeout(() => {
+      // Mock authentication with hardcoded credentials
+      if (email === 'coach@baseline.com' && password === 'coach123' && selectedRole === 'coach') {
+        // Store user role in localStorage
+        localStorage.setItem('userRole', 'coach');
+        
+        toast({
+          title: "Login successful!",
+          description: "Welcome back, Coach!",
+        });
+        
+        // Redirect to coach dashboard
+        navigate('/coach-dashboard');
+      } else if (email === 'parent@baseline.com' && password === 'parent123' && selectedRole === 'parent') {
+        // Store user role in localStorage
+        localStorage.setItem('userRole', 'parent');
+        
+        toast({
+          title: "Login successful!",
+          description: "Welcome to your dashboard!",
+        });
+        
+        // Redirect to parent dashboard
+        navigate('/parent-dashboard');
+      } else {
+        setError('Invalid email or password');
+        console.log('Login failed: Invalid credentials');
+      }
+      setIsLoading(false);
+    }, 1000);
   };
 
   return (
@@ -73,7 +79,7 @@ const Login = () => {
       
       <div className="flex-1 flex items-center justify-center py-24 px-4">
         <div className="w-full max-w-md">
-          <div className="bg-gray-900 rounded-lg shadow-xl border border-gray-800 overflow-hidden">
+          <div className="bg-gray-900 rounded-lg shadow-xl border border-gray-800 overflow-hidden backdrop-blur-md">
             {/* Header */}
             <div className="bg-gradient-to-r from-gray-800 to-black p-6 border-b border-gray-800">
               <h2 className="text-2xl font-bold text-center">
@@ -155,8 +161,9 @@ const Login = () => {
                       <Button
                         type="submit"
                         className="button-primary w-full"
+                        disabled={isLoading}
                       >
-                        Login
+                        {isLoading ? 'Logging in...' : 'Login'}
                       </Button>
                     </div>
                     

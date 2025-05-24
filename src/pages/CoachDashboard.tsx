@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Calendar, 
@@ -9,10 +10,29 @@ import {
   Bell, 
   LogOut,
   Plus,
-  Download
+  Download,
+  Trash2,
+  X,
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from "@/components/ui/use-toast";
+
+// Tournament interface
+interface Tournament {
+  id: number;
+  title: string;
+  date: string;
+  location: string;
+  description: string;
+  matchType: string;
+  ageGroups: string[];
+  registrationOpen: string;
+  registrationClose: string;
+  requiredFields: string[];
+  status?: 'upcoming' | 'completed' | 'cancelled';
+}
 
 // Mock data for players
 const initialPlayers: Player[] = [
@@ -38,9 +58,15 @@ interface Player {
 
 const CoachDashboard = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [players, setPlayers] = useState<Player[]>(initialPlayers);
   const [newPlayer, setNewPlayer] = useState({ name: '', program: '3-Day' as Program });
   const [announcementText, setAnnouncementText] = useState('');
+  const [upcomingTournament, setUpcomingTournament] = useState<Tournament | null>(null);
+  const [pastTournaments, setPastTournaments] = useState<Tournament[]>([]);
+  const [showConfirmCancel, setShowConfirmCancel] = useState(false);
+  const [tournamentToCancel, setTournamentToCancel] = useState<number | null>(null);
+  const [registrations, setRegistrations] = useState<any[]>([]);
   
   // Tournament Form State
   const [tournamentForm, setTournamentForm] = useState({
@@ -63,6 +89,27 @@ const CoachDashboard = () => {
     }, {} as Record<number, string[]>)
   );
   
+  // Load tournaments on component mount
+  useEffect(() => {
+    // Load upcoming tournament
+    const storedUpcoming = localStorage.getItem('upcomingTournament');
+    if (storedUpcoming) {
+      setUpcomingTournament(JSON.parse(storedUpcoming));
+    }
+    
+    // Load past tournaments
+    const storedPast = localStorage.getItem('pastTournaments');
+    if (storedPast) {
+      setPastTournaments(JSON.parse(storedPast));
+    }
+    
+    // Load registrations
+    const storedRegistrations = localStorage.getItem('tournamentRegistrations');
+    if (storedRegistrations) {
+      setRegistrations(JSON.parse(storedRegistrations));
+    }
+  }, []);
+  
   const handleAttendanceChange = (playerId: number, day: string) => {
     setAttendance(prev => {
       const playerAttendance = [...(prev[playerId] || [])];
@@ -76,6 +123,16 @@ const CoachDashboard = () => {
       
       return { ...prev, [playerId]: playerAttendance };
     });
+    
+    // Update player's attended classes
+    setPlayers(prev => prev.map(player => {
+      if (player.id === playerId) {
+        const daysAttended = attendance[playerId]?.length || 0;
+        const newDaysAttended = dayIndex === -1 ? daysAttended + 1 : daysAttended - 1;
+        return { ...player, attendedClasses: player.attendedClasses + (dayIndex === -1 ? 1 : -1) };
+      }
+      return player;
+    }));
   };
   
   const handleAddPlayer = () => {
@@ -99,22 +156,150 @@ const CoachDashboard = () => {
     }));
     
     setNewPlayer({ name: '', program: '3-Day' });
+    
+    toast({
+      title: "Player added",
+      description: `${newPlayer.name} has been added to the ${newPlayer.program} program.`,
+    });
   };
   
   const handlePublishAnnouncement = () => {
-    if (!announcementText) return;
-    // This would typically store the announcement to be shown on the home page
-    alert(`Announcement published: ${announcementText}`);
+    if (!announcementText) {
+      toast({
+        title: "Empty announcement",
+        description: "Please enter an announcement before publishing.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Save announcement to localStorage
+    localStorage.setItem('announcement', announcementText);
+    
+    toast({
+      title: "Announcement published",
+      description: "The announcement has been published to the home page.",
+    });
+    
     setAnnouncementText('');
   };
   
   const handleCreateTournament = () => {
-    // This would typically save the tournament data
-    alert('Tournament created successfully!');
+    // Validate form
+    if (!tournamentForm.title || !tournamentForm.date || !tournamentForm.location) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required tournament details.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (tournamentForm.ageGroups.length === 0) {
+      toast({
+        title: "Missing age groups",
+        description: "Please select at least one age group.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (tournamentForm.requiredFields.length === 0) {
+      toast({
+        title: "Missing required fields",
+        description: "Please select at least one required field for registration.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Create new tournament
+    const newTournament: Tournament = {
+      id: Date.now(),
+      ...tournamentForm,
+      status: 'upcoming'
+    };
+    
+    // Save as upcoming tournament
+    localStorage.setItem('upcomingTournament', JSON.stringify(newTournament));
+    setUpcomingTournament(newTournament);
+    
+    // Reset form
+    setTournamentForm({
+      title: '',
+      date: '',
+      location: '',
+      description: '',
+      matchType: '3v3',
+      ageGroups: [],
+      registrationOpen: '',
+      registrationClose: '',
+      requiredFields: []
+    });
+    
+    toast({
+      title: "Tournament created",
+      description: "The tournament has been published to the website.",
+    });
+  };
+  
+  const handleCancelTournament = (tournamentId: number) => {
+    setTournamentToCancel(tournamentId);
+    setShowConfirmCancel(true);
+  };
+  
+  const confirmCancelTournament = () => {
+    if (upcomingTournament && upcomingTournament.id === tournamentToCancel) {
+      // Update tournament status to cancelled
+      const updatedTournament = { ...upcomingTournament, status: 'cancelled' as const };
+      localStorage.setItem('upcomingTournament', JSON.stringify(updatedTournament));
+      setUpcomingTournament(updatedTournament);
+      
+      toast({
+        title: "Tournament cancelled",
+        description: "The tournament has been cancelled and removed from the public view.",
+      });
+    }
+    
+    setShowConfirmCancel(false);
+    setTournamentToCancel(null);
+  };
+  
+  const handleExportRegistrations = () => {
+    if (registrations.length === 0) {
+      toast({
+        title: "No data to export",
+        description: "There are no registrations for this tournament yet.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Create CSV content
+    const headers = Object.keys(registrations[0]).join(',');
+    const rows = registrations.map(reg => Object.values(reg).join(','));
+    const csvContent = [headers, ...rows].join('\n');
+    
+    // Create and trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `tournament_registrations_${Date.now()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Export successful",
+      description: "Tournament registrations have been exported to CSV.",
+    });
   };
   
   const handleLogout = () => {
-    // Clear any auth state/tokens
+    // Clear user role
+    localStorage.removeItem('userRole');
     navigate('/login');
   };
   
@@ -261,6 +446,16 @@ const CoachDashboard = () => {
                   </table>
                 </div>
               </div>
+              
+              <div className="mt-8 flex justify-between">
+                <Button className="button-primary">
+                  Save Attendance
+                </Button>
+                
+                <Button variant="outline">
+                  Reset Weekly Attendance
+                </Button>
+              </div>
             </div>
           </TabsContent>
           
@@ -331,6 +526,50 @@ const CoachDashboard = () => {
           
           {/* Tournaments Tab */}
           <TabsContent value="tournaments" className="space-y-8">
+            {/* Current Tournament Status */}
+            {upcomingTournament && (
+              <div className="bg-gray-900 rounded-lg border border-gray-800 p-6 mb-8">
+                <h2 className="text-xl font-bold mb-6">Current Tournament</h2>
+                
+                <div className="bg-black border border-gray-800 rounded-lg p-6">
+                  <div className="flex flex-col md:flex-row justify-between">
+                    <div>
+                      <h3 className="text-xl font-bold mb-2">{upcomingTournament.title}</h3>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        <span className="bg-gray-800 px-2 py-0.5 rounded-full text-xs">
+                          {upcomingTournament.date}
+                        </span>
+                        <span className="bg-gray-800 px-2 py-0.5 rounded-full text-xs">
+                          {upcomingTournament.matchType}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs ${
+                          upcomingTournament.status === 'cancelled' 
+                            ? 'bg-red-900/30 text-red-200' 
+                            : 'bg-green-900/30 text-green-200'
+                        }`}>
+                          {upcomingTournament.status === 'cancelled' ? 'Cancelled' : 'Active'}
+                        </span>
+                      </div>
+                      <p className="text-gray-300 mb-4">{upcomingTournament.description}</p>
+                    </div>
+                    
+                    <div className="mt-4 md:mt-0">
+                      {upcomingTournament.status !== 'cancelled' && (
+                        <Button 
+                          variant="destructive"
+                          onClick={() => handleCancelTournament(upcomingTournament.id)}
+                          className="flex items-center"
+                        >
+                          <Trash2 size={16} className="mr-2" /> Cancel Tournament
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Create New Tournament */}
             <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
               <h2 className="text-xl font-bold mb-6">Create New Tournament</h2>
               
@@ -338,7 +577,7 @@ const CoachDashboard = () => {
                 {/* Basic Tournament Info */}
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Tournament Title</label>
+                    <label className="block text-sm font-medium mb-1">Tournament Title*</label>
                     <input
                       type="text"
                       value={tournamentForm.title}
@@ -349,7 +588,7 @@ const CoachDashboard = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium mb-1">Date</label>
+                    <label className="block text-sm font-medium mb-1">Date*</label>
                     <input
                       type="date"
                       value={tournamentForm.date}
@@ -359,7 +598,7 @@ const CoachDashboard = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium mb-1">Location</label>
+                    <label className="block text-sm font-medium mb-1">Location*</label>
                     <input
                       type="text"
                       value={tournamentForm.location}
@@ -370,7 +609,7 @@ const CoachDashboard = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium mb-1">Match Type</label>
+                    <label className="block text-sm font-medium mb-1">Match Type*</label>
                     <select
                       value={tournamentForm.matchType}
                       onChange={(e) => setTournamentForm({ ...tournamentForm, matchType: e.target.value })}
@@ -397,7 +636,7 @@ const CoachDashboard = () => {
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-1">Registration Opens</label>
+                      <label className="block text-sm font-medium mb-1">Registration Opens*</label>
                       <input
                         type="date"
                         value={tournamentForm.registrationOpen}
@@ -407,7 +646,7 @@ const CoachDashboard = () => {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium mb-1">Registration Closes</label>
+                      <label className="block text-sm font-medium mb-1">Registration Closes*</label>
                       <input
                         type="date"
                         value={tournamentForm.registrationClose}
@@ -422,7 +661,7 @@ const CoachDashboard = () => {
               {/* Age Groups & Required Fields */}
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Age Groups</label>
+                  <label className="block text-sm font-medium mb-1">Age Groups*</label>
                   <div className="grid grid-cols-3 gap-2">
                     {['U15', 'U16', 'U17', 'U18', 'U19'].map((age) => (
                       <label key={age} className="flex items-center space-x-2">
@@ -451,12 +690,13 @@ const CoachDashboard = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Required Information</label>
+                  <label className="block text-sm font-medium mb-1">Required Information*</label>
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       'Team Name', 
                       'Player Names', 
-                      'Player Ages', 
+                      'Age', 
+                      'Contact Name',
                       'Phone Number', 
                       'Email', 
                       'Payment Screenshot'
@@ -500,70 +740,81 @@ const CoachDashboard = () => {
             <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
               <h2 className="text-xl font-bold mb-6">Tournament Registrations</h2>
               
-              {/* Mock tournament with registrations */}
-              <div className="mb-8 p-4 border border-gray-700 rounded-lg">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold">BaseLine Summer Championship</h3>
-                  <span className="bg-green-900 text-green-300 px-3 py-1 rounded-full text-xs">Registration Open</span>
-                </div>
-                
-                <p className="text-sm text-gray-400 mb-4">Registration closes: June 10, 2025</p>
-                
-                <div className="bg-gray-800 p-4 rounded-lg">
+              {/* Registrations for upcoming tournament */}
+              {upcomingTournament && (
+                <div className="mb-8 p-4 border border-gray-700 rounded-lg">
                   <div className="flex justify-between items-center mb-4">
-                    <div>
-                      <h4 className="font-medium">Current Registrations</h4>
-                      <p className="text-sm text-gray-400">8 teams registered</p>
-                    </div>
-                    
-                    <Button className="flex items-center">
-                      <Download size={16} className="mr-2" /> Export to Excel
-                    </Button>
+                    <h3 className="text-lg font-semibold">{upcomingTournament.title}</h3>
+                    <span className={`px-3 py-1 rounded-full text-xs ${
+                      upcomingTournament.status === 'cancelled' 
+                        ? 'bg-red-900 text-red-300' 
+                        : 'bg-green-900 text-green-300'
+                    }`}>
+                      {upcomingTournament.status === 'cancelled' ? 'Cancelled' : 'Registration Open'}
+                    </span>
                   </div>
                   
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr>
-                        <th className="text-left py-2 px-4">Team Name</th>
-                        <th className="text-left py-2 px-4">Contact</th>
-                        <th className="text-left py-2 px-4">Age Group</th>
-                        <th className="text-left py-2 px-4">Players</th>
-                        <th className="text-center py-2 px-4">Payment</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className="border-t border-gray-700">
-                        <td className="py-3 px-4">Baseline Ballers</td>
-                        <td className="py-3 px-4">John Doe<br/><span className="text-xs text-gray-400">john@example.com</span></td>
-                        <td className="py-3 px-4">U17</td>
-                        <td className="py-3 px-4">5</td>
-                        <td className="py-3 px-4 text-center"><span className="bg-green-900 text-green-300 px-2 py-0.5 rounded-full text-xs">Paid</span></td>
-                      </tr>
-                      <tr className="border-t border-gray-700">
-                        <td className="py-3 px-4">Slam Dunkers</td>
-                        <td className="py-3 px-4">Jane Smith<br/><span className="text-xs text-gray-400">jane@example.com</span></td>
-                        <td className="py-3 px-4">U15</td>
-                        <td className="py-3 px-4">4</td>
-                        <td className="py-3 px-4 text-center"><span className="bg-yellow-900 text-yellow-300 px-2 py-0.5 rounded-full text-xs">Pending</span></td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <p className="text-sm text-gray-400 mb-4">Registration closes: {upcomingTournament.registrationClose}</p>
+                  
+                  <div className="bg-gray-800 p-4 rounded-lg">
+                    <div className="flex justify-between items-center mb-4">
+                      <div>
+                        <h4 className="font-medium">Current Registrations</h4>
+                        <p className="text-sm text-gray-400">{registrations.length} teams registered</p>
+                      </div>
+                      
+                      <Button 
+                        className="flex items-center"
+                        onClick={handleExportRegistrations}
+                        disabled={registrations.length === 0}
+                      >
+                        <Download size={16} className="mr-2" /> Export to CSV
+                      </Button>
+                    </div>
+                    
+                    {registrations.length > 0 ? (
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr>
+                            <th className="text-left py-2 px-4">Team Name</th>
+                            <th className="text-left py-2 px-4">Contact</th>
+                            <th className="text-left py-2 px-4">Age Group</th>
+                            <th className="text-left py-2 px-4">Players</th>
+                            <th className="text-center py-2 px-4">Payment</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr className="border-t border-gray-700">
+                            <td className="py-3 px-4">{registrations[0]['Team Name'] || 'N/A'}</td>
+                            <td className="py-3 px-4">{registrations[0]['Contact Name'] || 'N/A'}<br/><span className="text-xs text-gray-400">{registrations[0]['Email'] || 'N/A'}</span></td>
+                            <td className="py-3 px-4">{registrations[0]['Age Group'] || 'N/A'}</td>
+                            <td className="py-3 px-4">{registrations[0]['player_1_name'] ? '1+' : 'N/A'}</td>
+                            <td className="py-3 px-4 text-center"><span className="bg-yellow-900 text-yellow-300 px-2 py-0.5 rounded-full text-xs">Pending</span></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    ) : (
+                      <p className="text-center text-gray-500 py-4">No registrations yet</p>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
               
               {/* Past tournament */}
-              <div className="p-4 border border-gray-700 rounded-lg">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold">Winter Elite Showdown</h3>
-                  <span className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-xs">Completed</span>
+              {pastTournaments.length > 0 && (
+                <div className="p-4 border border-gray-700 rounded-lg">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold">{pastTournaments[0].title}</h3>
+                    <span className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-xs">Completed</span>
+                  </div>
+                  
+                  <p className="text-sm text-gray-400 mb-4">Date: {pastTournaments[0].date}</p>
+                  
+                  <Button className="flex items-center">
+                    <Download size={16} className="mr-2" /> Download Results
+                  </Button>
                 </div>
-                
-                <p className="text-sm text-gray-400 mb-4">Date: December 10, 2024</p>
-                
-                <Button className="flex items-center">
-                  <Download size={16} className="mr-2" /> Download Results
-                </Button>
-              </div>
+              )}
             </div>
           </TabsContent>
           
@@ -598,6 +849,36 @@ const CoachDashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      {/* Confirmation Dialog */}
+      {showConfirmCancel && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-lg border border-gray-700 max-w-md w-full p-6 shadow-2xl">
+            <h3 className="text-xl font-bold mb-4">Cancel Tournament?</h3>
+            <p className="text-gray-300 mb-6">
+              Are you sure you want to cancel this tournament? This will remove it from the public view and cannot be undone.
+            </p>
+            
+            <div className="flex gap-4">
+              <Button 
+                variant="outline" 
+                className="w-full" 
+                onClick={() => setShowConfirmCancel(false)}
+              >
+                <X size={18} className="mr-2" /> No, Keep It
+              </Button>
+              
+              <Button 
+                variant="destructive" 
+                className="w-full" 
+                onClick={confirmCancelTournament}
+              >
+                <Check size={18} className="mr-2" /> Yes, Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
