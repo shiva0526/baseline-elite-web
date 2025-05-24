@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -16,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Mock data for players
-const initialPlayers = [
+const initialPlayers: Player[] = [
   { id: 1, name: 'Michael Jordan', program: '5-Day', attendedClasses: 15 },
   { id: 2, name: 'LeBron James', program: '3-Day', attendedClasses: 8 },
   { id: 3, name: 'Kevin Durant', program: '5-Day', attendedClasses: 12 },

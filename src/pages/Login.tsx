@@ -1,8 +1,9 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, UserCog, Users, User } from 'lucide-react';
+import { ChevronLeft, UserCog, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useToast } from "@/components/ui/use-toast";
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 
@@ -11,6 +12,7 @@ type LoginStage = 'select-role' | 'login-form';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [selectedRole, setSelectedRole] = useState<Role>(null);
   const [stage, setStage] = useState<LoginStage>('select-role');
   const [email, setEmail] = useState('');
@@ -34,14 +36,28 @@ const Login = () => {
     e.preventDefault();
     setError('');
     
-    // This would typically connect to an authentication service
-    // For now, we'll use mock data for demonstration
     try {
       // Mock authentication
       if (email === 'coach@baseline.com' && password === 'coach123' && selectedRole === 'coach') {
+        // Store user role in localStorage
+        localStorage.setItem('userRole', 'coach');
+        
+        toast({
+          title: "Login successful!",
+          description: "Welcome back, Coach!",
+        });
+        
         // Redirect to coach dashboard
         navigate('/coach-dashboard');
       } else if (email === 'parent@baseline.com' && password === 'parent123' && selectedRole === 'parent') {
+        // Store user role in localStorage
+        localStorage.setItem('userRole', 'parent');
+        
+        toast({
+          title: "Login successful!",
+          description: "Welcome to your dashboard!",
+        });
+        
         // Redirect to parent dashboard
         navigate('/parent-dashboard');
       } else {

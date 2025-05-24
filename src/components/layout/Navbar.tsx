@@ -1,10 +1,11 @@
 
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Navbar = () => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   
@@ -30,6 +31,10 @@ const Navbar = () => {
     { name: 'Tournament', path: '/tournaments' },
     { name: 'Contact', path: '/contact' },
   ];
+  
+  const handleJoinClick = () => {
+    navigate('/programs');
+  };
   
   return (
     <header 
@@ -62,7 +67,7 @@ const Navbar = () => {
             <Link to="/login">
               <Button className="button-outline">Login</Button>
             </Link>
-            <Button className="button-primary">Join Now</Button>
+            <Button className="button-primary" onClick={handleJoinClick}>Join Now</Button>
           </div>
         </nav>
         
@@ -106,8 +111,11 @@ const Navbar = () => {
                 </Button>
               </Link>
               <Button 
-                className="button-primary w-full" 
-                onClick={() => setIsOpen(false)}
+                className="button-primary w-full"
+                onClick={() => {
+                  setIsOpen(false);
+                  handleJoinClick();
+                }}
               >
                 Join Now
               </Button>
