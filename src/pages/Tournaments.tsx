@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from "@/components/ui/use-toast";
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import TournamentRegistrationForm from '@/components/tournaments/TournamentRegistrationForm';
+import DynamicRegistrationForm from '@/components/tournaments/DynamicRegistrationForm';
 
 // Tournament interface
 interface Tournament {
@@ -249,7 +249,7 @@ const Tournaments = () => {
       {/* Registration Modal */}
       {showRegistrationForm && upcomingTournament && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <TournamentRegistrationForm
+          <DynamicRegistrationForm
             tournament={upcomingTournament}
             onComplete={handleRegistrationComplete}
             onCancel={handleRegistrationCancel}

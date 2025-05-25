@@ -63,10 +63,18 @@ const Index = () => {
       )}
       
       <HeroSection />
-      <FeaturesSection />
-      <ProgramsPreview />
-      <TestimonialsSection />
-      <CallToAction />
+      <div id="features-section">
+        <FeaturesSection />
+      </div>
+      <div id="programs-section">
+        <ProgramsPreview />
+      </div>
+      <div id="testimonials-section">
+        <TestimonialsSection />
+      </div>
+      <div id="cta-section">
+        <CallToAction />
+      </div>
       <Footer />
     </div>
   );
