@@ -6,9 +6,8 @@ import { Button } from '@/components/ui/button';
 import { useToast } from "@/components/ui/use-toast";
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import TournamentRegistrationForm from '@/components/tournaments/TournamentRegistrationForm';
+import DynamicTournamentRegistrationForm from '@/components/tournaments/DynamicTournamentRegistrationForm';
 
-// Tournament interface
 interface Tournament {
   id: number;
   title: string;
@@ -32,17 +31,13 @@ const Tournaments = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load tournament data
     const fetchTournaments = () => {
       setIsLoading(true);
       
       try {
-        // Get upcoming tournament from localStorage for now
-        // In a real app, this would be a fetch from your backend API
         const upcomingData = localStorage.getItem('upcomingTournament');
         if (upcomingData) {
           const tournament = JSON.parse(upcomingData);
-          // Only show if not cancelled
           if (tournament.status !== 'cancelled') {
             setUpcomingTournament(tournament);
           } else {
@@ -50,7 +45,6 @@ const Tournaments = () => {
           }
         }
         
-        // Get past tournaments
         const pastData = localStorage.getItem('pastTournaments');
         if (pastData) {
           setPastTournaments(JSON.parse(pastData));
@@ -69,7 +63,6 @@ const Tournaments = () => {
     
     fetchTournaments();
     
-    // Set up listener for storage changes (for demo purposes)
     const handleStorageChange = () => fetchTournaments();
     window.addEventListener('storage', handleStorageChange);
     
@@ -81,7 +74,6 @@ const Tournaments = () => {
   const handleRegister = () => {
     if (!upcomingTournament) return;
     
-    // Check if registration is still open
     const today = new Date();
     const closeDate = new Date(upcomingTournament.registrationClose);
     
@@ -249,7 +241,7 @@ const Tournaments = () => {
       {/* Registration Modal */}
       {showRegistrationForm && upcomingTournament && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <TournamentRegistrationForm
+          <DynamicTournamentRegistrationForm
             tournament={upcomingTournament}
             onComplete={handleRegistrationComplete}
             onCancel={handleRegistrationCancel}

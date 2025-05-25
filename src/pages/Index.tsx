@@ -14,7 +14,6 @@ const Index = () => {
   const [showAnnouncement, setShowAnnouncement] = useState(false);
 
   useEffect(() => {
-    // Check for announcements
     const fetchAnnouncement = () => {
       const storedAnnouncement = localStorage.getItem('announcement');
       if (storedAnnouncement) {
@@ -23,10 +22,8 @@ const Index = () => {
       }
     };
     
-    // Initial check
     fetchAnnouncement();
     
-    // Listen for storage events to update in real time
     const handleStorageChange = () => {
       fetchAnnouncement();
     };
@@ -62,11 +59,21 @@ const Index = () => {
         </div>
       )}
       
-      <HeroSection />
-      <FeaturesSection />
-      <ProgramsPreview />
-      <TestimonialsSection />
-      <CallToAction />
+      <div id="hero">
+        <HeroSection />
+      </div>
+      <div id="features">
+        <FeaturesSection />
+      </div>
+      <div id="programs">
+        <ProgramsPreview />
+      </div>
+      <div id="testimonials">
+        <TestimonialsSection />
+      </div>
+      <div id="cta">
+        <CallToAction />
+      </div>
       <Footer />
     </div>
   );
