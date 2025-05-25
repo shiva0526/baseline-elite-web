@@ -4,7 +4,6 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/components/ui/use-toast";
-import NavigationScrollLinks from '@/components/home/NavigationScrollLinks';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -15,9 +14,11 @@ const Navbar = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   
   useEffect(() => {
+    // Check if user is logged in
     const role = localStorage.getItem('userRole');
     setUserRole(role);
     
+    // Handle scroll for transparent header
     const handleScroll = () => {
       if (window.scrollY > 20) {
         setScrolled(true);
@@ -28,7 +29,17 @@ const Navbar = () => {
     
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [location.pathname]);
+  }, [location.pathname]); // Re-check when route changes
+  
+  const navLinks = [
+    { name: 'Home', path: '/' },
+    { name: 'About', path: '/about' },
+    { name: 'Programs', path: '/programs' },
+    { name: 'Gallery', path: '/gallery' },
+    { name: 'Schedule', path: '/schedule' },
+    { name: 'Tournaments', path: '/tournaments' },
+    { name: 'Contact', path: '/contact' },
+  ];
   
   const handleJoinClick = () => {
     navigate('/programs');
@@ -56,8 +67,6 @@ const Navbar = () => {
     navigate('/', { replace: true });
   };
   
-  const isHomePage = location.pathname === '/';
-  
   return (
     <header 
       className={`fixed w-full top-0 z-50 transition-all duration-300 ${
@@ -76,21 +85,17 @@ const Navbar = () => {
         
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
-          {isHomePage ? (
-            <NavigationScrollLinks 
-              className={`text-white hover:text-baseline-yellow font-medium transition-colors duration-300`}
-            />
-          ) : (
-            <>
-              <Link to="/" className="text-white hover:text-baseline-yellow font-medium transition-colors duration-300">Home</Link>
-              <Link to="/about" className="text-white hover:text-baseline-yellow font-medium transition-colors duration-300">About</Link>
-              <Link to="/programs" className="text-white hover:text-baseline-yellow font-medium transition-colors duration-300">Programs</Link>
-              <Link to="/gallery" className="text-white hover:text-baseline-yellow font-medium transition-colors duration-300">Gallery</Link>
-              <Link to="/schedule" className="text-white hover:text-baseline-yellow font-medium transition-colors duration-300">Schedule</Link>
-              <Link to="/tournaments" className="text-white hover:text-baseline-yellow font-medium transition-colors duration-300">Tournaments</Link>
-              <Link to="/contact" className="text-white hover:text-baseline-yellow font-medium transition-colors duration-300">Contact</Link>
-            </>
-          )}
+          {navLinks.map((link) => (
+            <Link 
+              key={link.name}
+              to={link.path}
+              className={`text-white hover:text-baseline-yellow font-medium transition-colors duration-300 ${
+                location.pathname === link.path ? 'text-baseline-yellow' : ''
+              }`}
+            >
+              {link.name}
+            </Link>
+          ))}
           <div className="flex items-center space-x-4">
             {userRole ? (
               <div className="flex items-center space-x-4">
@@ -117,7 +122,11 @@ const Navbar = () => {
           onClick={() => setIsOpen(!isOpen)}
           className="md:hidden text-white hover:text-baseline-yellow"
         >
-          {isOpen ? <X size={28} /> : <Menu size={28} />}
+          {isOpen ? (
+            <X size={28} />
+          ) : (
+            <Menu size={28} />
+          )}
         </button>
       </div>
       
@@ -125,22 +134,19 @@ const Navbar = () => {
       {isOpen && (
         <div className="fixed inset-0 top-[72px] bg-black z-40 flex flex-col md:hidden animate-fade-in">
           <div className="container mx-auto py-8 px-4 flex flex-col space-y-6">
-            {isHomePage ? (
-              <NavigationScrollLinks 
-                className="text-white hover:text-baseline-yellow text-2xl font-semibold transition-all duration-300"
-                onLinkClick={() => setIsOpen(false)}
-              />
-            ) : (
-              <>
-                <Link to="/" onClick={() => setIsOpen(false)} className="text-white hover:text-baseline-yellow text-2xl font-semibold transition-all duration-300">Home</Link>
-                <Link to="/about" onClick={() => setIsOpen(false)} className="text-white hover:text-baseline-yellow text-2xl font-semibold transition-all duration-300">About</Link>
-                <Link to="/programs" onClick={() => setIsOpen(false)} className="text-white hover:text-baseline-yellow text-2xl font-semibold transition-all duration-300">Programs</Link>
-                <Link to="/gallery" onClick={() => setIsOpen(false)} className="text-white hover:text-baseline-yellow text-2xl font-semibold transition-all duration-300">Gallery</Link>
-                <Link to="/schedule" onClick={() => setIsOpen(false)} className="text-white hover:text-baseline-yellow text-2xl font-semibold transition-all duration-300">Schedule</Link>
-                <Link to="/tournaments" onClick={() => setIsOpen(false)} className="text-white hover:text-baseline-yellow text-2xl font-semibold transition-all duration-300">Tournaments</Link>
-                <Link to="/contact" onClick={() => setIsOpen(false)} className="text-white hover:text-baseline-yellow text-2xl font-semibold transition-all duration-300">Contact</Link>
-              </>
-            )}
+            {navLinks.map((link, index) => (
+              <Link
+                key={link.name}
+                to={link.path}
+                onClick={() => setIsOpen(false)}
+                className={`text-white hover:text-baseline-yellow text-2xl font-semibold transition-all duration-300 ${
+                  isOpen ? 'animate-slide-in' : ''
+                } ${location.pathname === link.path ? 'text-baseline-yellow' : ''}`}
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                {link.name}
+              </Link>
+            ))}
             <div className="flex flex-col space-y-4 mt-8">
               {userRole ? (
                 <>
