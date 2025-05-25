@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, LogOut } from 'lucide-react';
@@ -39,39 +40,6 @@ const Navbar = () => {
     { name: 'Tournaments', path: '/tournaments' },
     { name: 'Contact', path: '/contact' },
   ];
-
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'start' 
-      });
-    }
-  };
-
-  const handleNavClick = (linkName: string, path: string) => {
-    setIsOpen(false);
-    
-    if (location.pathname === '/' && ['About', 'Programs', 'Gallery', 'Contact'].includes(linkName)) {
-      // If on homepage, scroll to section
-      const sectionMap: { [key: string]: string } = {
-        'About': 'features-section',
-        'Programs': 'programs-section', 
-        'Gallery': 'testimonials-section',
-        'Contact': 'cta-section'
-      };
-      
-      const sectionId = sectionMap[linkName];
-      if (sectionId) {
-        scrollToSection(sectionId);
-        return;
-      }
-    }
-    
-    // Otherwise navigate normally
-    navigate(path);
-  };
   
   const handleJoinClick = () => {
     navigate('/programs');
@@ -118,15 +86,15 @@ const Navbar = () => {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
           {navLinks.map((link) => (
-            <button
+            <Link 
               key={link.name}
-              onClick={() => handleNavClick(link.name, link.path)}
+              to={link.path}
               className={`text-white hover:text-baseline-yellow font-medium transition-colors duration-300 ${
                 location.pathname === link.path ? 'text-baseline-yellow' : ''
               }`}
             >
               {link.name}
-            </button>
+            </Link>
           ))}
           <div className="flex items-center space-x-4">
             {userRole ? (
@@ -167,16 +135,17 @@ const Navbar = () => {
         <div className="fixed inset-0 top-[72px] bg-black z-40 flex flex-col md:hidden animate-fade-in">
           <div className="container mx-auto py-8 px-4 flex flex-col space-y-6">
             {navLinks.map((link, index) => (
-              <button
+              <Link
                 key={link.name}
-                onClick={() => handleNavClick(link.name, link.path)}
-                className={`text-white hover:text-baseline-yellow text-2xl font-semibold transition-all duration-300 text-left ${
+                to={link.path}
+                onClick={() => setIsOpen(false)}
+                className={`text-white hover:text-baseline-yellow text-2xl font-semibold transition-all duration-300 ${
                   isOpen ? 'animate-slide-in' : ''
                 } ${location.pathname === link.path ? 'text-baseline-yellow' : ''}`}
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 {link.name}
-              </button>
+              </Link>
             ))}
             <div className="flex flex-col space-y-4 mt-8">
               {userRole ? (
@@ -202,9 +171,9 @@ const Navbar = () => {
                   </Button>
                 </>
               ) : (
-                <Button className="button-outline w-full" onClick={handleLoginClick}>
-                  Login
-                </Button>
+                <Link to="/login" onClick={() => setIsOpen(false)}>
+                  <Button className="button-outline w-full">Login</Button>
+                </Link>
               )}
               <Button 
                 className="button-primary w-full"

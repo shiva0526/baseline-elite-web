@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, UserCog, User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { ChevronLeft, UserCog, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/components/ui/use-toast";
 import Navbar from '@/components/layout/Navbar';
@@ -17,7 +17,6 @@ const Login = () => {
   const [stage, setStage] = useState<LoginStage>('select-role');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -75,165 +74,109 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white flex flex-col">
+    <div className="min-h-screen bg-black text-white flex flex-col">
       <Navbar />
       
       <div className="flex-1 flex items-center justify-center py-24 px-4">
         <div className="w-full max-w-md">
-          <div className="relative">
-            {/* Glassmorphism Background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20"></div>
+          <div className="bg-gray-900 rounded-lg shadow-xl border border-gray-800 overflow-hidden backdrop-blur-md">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-gray-800 to-black p-6 border-b border-gray-800">
+              <h2 className="text-2xl font-bold text-center">
+                Welcome to <span className="gradient-text">BaseLine Academy</span>
+              </h2>
+            </div>
             
-            <div className="relative bg-gradient-to-br from-gray-900/90 to-black/90 rounded-2xl shadow-2xl border border-gray-700/50 overflow-hidden">
-              {/* Header with Sports Theme */}
-              <div className="relative bg-gradient-to-r from-baseline-yellow via-yellow-400 to-baseline-yellow p-6 text-center">
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-yellow-500/20"></div>
-                <div className="relative">
-                  <h2 className="text-2xl font-bold text-black mb-2">
-                    Welcome to <span className="font-black">BaseLine Academy</span>
-                  </h2>
-                  <p className="text-black/80 text-sm">Elite Basketball Training Platform</p>
-                </div>
-              </div>
-              
-              {/* Content */}
-              <div className="p-8">
-                {stage === 'select-role' ? (
-                  <div className="animate-fade-in">
-                    <div className="text-center mb-8">
-                      <h3 className="text-xl font-semibold mb-2">Choose Your Role</h3>
-                      <p className="text-gray-400 text-sm">Select how you want to access the platform</p>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <button
-                        onClick={() => handleRoleSelect('coach')}
-                        className="w-full group relative overflow-hidden bg-gradient-to-r from-gray-800 to-gray-700 hover:from-baseline-yellow/20 hover:to-yellow-600/20 border border-gray-600 hover:border-baseline-yellow/50 rounded-xl p-6 transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
-                      >
-                        <div className="flex items-center space-x-4">
-                          <div className="p-3 bg-baseline-yellow/20 rounded-lg group-hover:bg-baseline-yellow/30 transition-colors">
-                            <UserCog size={24} className="text-baseline-yellow" />
-                          </div>
-                          <div className="text-left">
-                            <h4 className="font-semibold text-lg">Coach Login</h4>
-                            <p className="text-gray-400 text-sm">Manage teams, players & events</p>
-                          </div>
-                        </div>
-                      </button>
-                      
-                      <button
-                        onClick={() => handleRoleSelect('parent')}
-                        className="w-full group relative overflow-hidden bg-gradient-to-r from-gray-800 to-gray-700 hover:from-baseline-yellow/20 hover:to-yellow-600/20 border border-gray-600 hover:border-baseline-yellow/50 rounded-xl p-6 transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
-                      >
-                        <div className="flex items-center space-x-4">
-                          <div className="p-3 bg-baseline-yellow/20 rounded-lg group-hover:bg-baseline-yellow/30 transition-colors">
-                            <User size={24} className="text-baseline-yellow" />
-                          </div>
-                          <div className="text-left">
-                            <h4 className="font-semibold text-lg">Parent Login</h4>
-                            <p className="text-gray-400 text-sm">Track your child's progress</p>
-                          </div>
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="animate-fade-in">
+            {/* Content */}
+            <div className="p-6">
+              {stage === 'select-role' ? (
+                <>
+                  <p className="text-center text-gray-300 mb-8">
+                    Please select your role to continue
+                  </p>
+                  
+                  <div className="grid grid-cols-2 gap-4">
                     <button
-                      onClick={handleBackToRoles}
-                      className="flex items-center text-gray-400 hover:text-baseline-yellow mb-6 transition-colors"
+                      onClick={() => handleRoleSelect('coach')}
+                      className="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg p-6 flex flex-col items-center justify-center transition-all duration-200 hover:border-baseline-yellow"
                     >
-                      <ChevronLeft size={16} className="mr-1" /> Back to roles
+                      <UserCog size={48} className="text-baseline-yellow mb-4" />
+                      <span className="text-lg font-medium">Coach Login</span>
                     </button>
                     
-                    <div className="text-center mb-8">
-                      <div className="p-3 bg-baseline-yellow/20 rounded-lg inline-block mb-4">
-                        {selectedRole === 'coach' ? 
-                          <UserCog size={32} className="text-baseline-yellow" /> : 
-                          <User size={32} className="text-baseline-yellow" />
-                        }
-                      </div>
-                      <h3 className="text-xl font-bold">
-                        {selectedRole === 'coach' ? 'Coach Portal' : 'Parent Portal'}
-                      </h3>
-                      <p className="text-gray-400 text-sm">Enter your credentials to continue</p>
+                    <button
+                      onClick={() => handleRoleSelect('parent')}
+                      className="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg p-6 flex flex-col items-center justify-center transition-all duration-200 hover:border-baseline-yellow"
+                    >
+                      <User size={48} className="text-baseline-yellow mb-4" />
+                      <span className="text-lg font-medium">Parent Login</span>
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={handleBackToRoles}
+                    className="flex items-center text-gray-400 hover:text-baseline-yellow mb-6"
+                  >
+                    <ChevronLeft size={16} className="mr-1" /> Back to roles
+                  </button>
+                  
+                  <h3 className="text-xl font-bold mb-6">
+                    {selectedRole === 'coach' ? 'Coach Login' : 'Parent Login'}
+                  </h3>
+                  
+                  {error && (
+                    <div className="bg-red-900/30 border border-red-800 text-red-200 px-4 py-2 rounded mb-4">
+                      {error}
+                    </div>
+                  )}
+                  
+                  <form onSubmit={handleLogin} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Email</label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-2"
+                        placeholder="Enter your email"
+                        required
+                      />
                     </div>
                     
-                    {error && (
-                      <div className="bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg mb-6 backdrop-blur-sm animate-shake">
-                        <p className="text-sm font-medium">{error}</p>
-                      </div>
-                    )}
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Password</label>
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-2"
+                        placeholder="Enter your password"
+                        required
+                      />
+                    </div>
                     
-                    <form onSubmit={handleLogin} className="space-y-6">
-                      <div className="space-y-4">
-                        <div className="relative">
-                          <label className="block text-sm font-medium mb-2 text-gray-300">Email Address</label>
-                          <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                            <input
-                              type="email"
-                              value={email}
-                              onChange={(e) => setEmail(e.target.value)}
-                              className="w-full pl-12 pr-4 py-3 rounded-lg border border-gray-600 bg-gray-800/50 backdrop-blur-sm focus:border-baseline-yellow focus:ring-2 focus:ring-baseline-yellow/20 transition-all"
-                              placeholder="Enter your email"
-                              required
-                            />
-                          </div>
-                        </div>
-                        
-                        <div className="relative">
-                          <label className="block text-sm font-medium mb-2 text-gray-300">Password</label>
-                          <div className="relative">
-                            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                            <input
-                              type={showPassword ? 'text' : 'password'}
-                              value={password}
-                              onChange={(e) => setPassword(e.target.value)}
-                              className="w-full pl-12 pr-12 py-3 rounded-lg border border-gray-600 bg-gray-800/50 backdrop-blur-sm focus:border-baseline-yellow focus:ring-2 focus:ring-baseline-yellow/20 transition-all"
-                              placeholder="Enter your password"
-                              required
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300"
-                            >
-                              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                      
+                    <div className="pt-2">
                       <Button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-baseline-yellow to-yellow-400 hover:from-yellow-400 hover:to-baseline-yellow text-black font-semibold py-3 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                        className="button-primary w-full"
                         disabled={isLoading}
                       >
-                        {isLoading ? (
-                          <div className="flex items-center justify-center">
-                            <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-black mr-2"></div>
-                            Signing in...
-                          </div>
-                        ) : (
-                          'Sign In'
-                        )}
+                        {isLoading ? 'Logging in...' : 'Login'}
                       </Button>
-                      
-                      <div className="text-center">
-                        <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700/50">
-                          <p className="text-xs text-gray-400 mb-2 font-medium">Demo Credentials:</p>
-                          <p className="text-xs text-baseline-yellow">
-                            {selectedRole === 'coach' ? 
-                              'coach@baseline.com / coach123' : 
-                              'parent@baseline.com / parent123'}
-                          </p>
-                        </div>
-                      </div>
-                    </form>
-                  </div>
-                )}
-              </div>
+                    </div>
+                    
+                    <div className="text-center text-sm text-gray-500 pt-2">
+                      <p>
+                        {selectedRole === 'coach' ? 
+                          'Demo account: coach@baseline.com / coach123' : 
+                          'Demo account: parent@baseline.com / parent123'}
+                      </p>
+                    </div>
+                  </form>
+                </>
+              )}
             </div>
           </div>
         </div>
