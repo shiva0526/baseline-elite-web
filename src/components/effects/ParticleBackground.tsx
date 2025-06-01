@@ -1,11 +1,12 @@
 
 import { useCallback } from 'react';
 import Particles from 'react-particles';
-import { loadFull } from 'tsparticles';
+import { loadSlim } from 'tsparticles-slim';
+import type { Engine } from 'tsparticles-engine';
 
 const ParticleBackground = () => {
-  const particlesInit = useCallback(async (engine: any) => {
-    await loadFull(engine);
+  const particlesInit = useCallback(async (engine: Engine) => {
+    await loadSlim(engine);
   }, []);
 
   return (
@@ -57,7 +58,7 @@ const ParticleBackground = () => {
             enable: true,
           },
           move: {
-            direction: "none",
+            direction: "none" as const,
             enable: true,
             outModes: {
               default: "bounce",

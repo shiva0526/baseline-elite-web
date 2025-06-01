@@ -29,7 +29,7 @@ const Navbar = () => {
     
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [location.pathname]); // Re-check when route changes
+  }, [location.pathname]);
   
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -99,19 +99,28 @@ const Navbar = () => {
           <div className="flex items-center space-x-4">
             {userRole ? (
               <div className="flex items-center space-x-4">
-                <Button className="button-outline" onClick={handleDashboardClick}>
+                <Button 
+                  className="bg-baseline-yellow/10 border border-baseline-yellow text-baseline-yellow hover:bg-baseline-yellow hover:text-black font-semibold px-6 py-2 rounded-lg transition-all duration-300" 
+                  onClick={handleDashboardClick}
+                >
                   Dashboard
                 </Button>
-                <Button variant="ghost" onClick={handleLogout} className="text-gray-300">
+                <Button variant="ghost" onClick={handleLogout} className="text-gray-300 hover:text-baseline-yellow">
                   <LogOut size={18} className="mr-2" /> Logout
                 </Button>
               </div>
             ) : (
-              <Button className="button-outline" onClick={handleLoginClick}>
+              <Button 
+                className="bg-baseline-yellow text-black hover:bg-baseline-yellow/90 font-bold px-6 py-2 rounded-lg transition-all duration-300" 
+                onClick={handleLoginClick}
+              >
                 Login
               </Button>
             )}
-            <Button className="button-primary" onClick={handleJoinClick}>
+            <Button 
+              className="bg-baseline-yellow text-black hover:bg-yellow-400 font-bold px-6 py-2 rounded-lg transition-all duration-300 shadow-lg shadow-baseline-yellow/30" 
+              onClick={handleJoinClick}
+            >
               Join Now
             </Button>
           </div>
@@ -151,7 +160,7 @@ const Navbar = () => {
               {userRole ? (
                 <>
                   <Button 
-                    className="button-outline w-full" 
+                    className="bg-baseline-yellow/10 border border-baseline-yellow text-baseline-yellow hover:bg-baseline-yellow hover:text-black w-full font-semibold" 
                     onClick={() => {
                       setIsOpen(false);
                       handleDashboardClick();
@@ -165,18 +174,18 @@ const Navbar = () => {
                       setIsOpen(false);
                       handleLogout();
                     }}
-                    className="w-full text-gray-300"
+                    className="w-full text-gray-300 hover:text-baseline-yellow"
                   >
                     <LogOut size={18} className="mr-2" /> Logout
                   </Button>
                 </>
               ) : (
                 <Link to="/login" onClick={() => setIsOpen(false)}>
-                  <Button className="button-outline w-full">Login</Button>
+                  <Button className="bg-baseline-yellow text-black hover:bg-baseline-yellow/90 w-full font-bold">Login</Button>
                 </Link>
               )}
               <Button 
-                className="button-primary w-full"
+                className="bg-baseline-yellow text-black hover:bg-yellow-400 w-full font-bold shadow-lg shadow-baseline-yellow/30"
                 onClick={() => {
                   setIsOpen(false);
                   handleJoinClick();
