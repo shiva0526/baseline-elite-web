@@ -98,7 +98,7 @@ const HeroSection = () => {
               <motion.div variants={buttonVariants}>
                 <Link to="/programs" className="group">
                   <motion.button
-                    whileHover={{ scale: 1.05, brightness: 1.1 }}
+                    whileHover={{ scale: 1.05, filter: "brightness(1.1)" }}
                     whileTap={{ scale: 0.95 }}
                     className="bg-baseline-yellow text-black font-bold px-8 py-4 rounded-xl flex items-center gap-3 transition-all duration-300 hover:shadow-2xl hover:shadow-baseline-yellow/40 text-lg"
                   >
