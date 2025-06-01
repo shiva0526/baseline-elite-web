@@ -1,5 +1,5 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -72,6 +72,15 @@
   .card-hover {
     @apply transition-all duration-300 hover:shadow-xl hover:shadow-baseline-yellow/10 hover:-translate-y-1;
   }
+
+  /* New gradient utilities */
+  .bg-gradient-radial {
+    background: radial-gradient(var(--tw-gradient-stops));
+  }
+  
+  .bg-gradient-conic {
+    background: conic-gradient(var(--tw-gradient-stops));
+  }
 }
 
 /* Additional custom styles */
@@ -95,4 +104,31 @@
 @keyframes marquee {
   0% { transform: translateX(0); }
   100% { transform: translateX(-100%); }
+}
+
+/* Enhanced glow effects */
+.glow {
+  filter: drop-shadow(0 0 10px rgba(247, 208, 70, 0.5));
+}
+
+.glow-strong {
+  filter: drop-shadow(0 0 20px rgba(247, 208, 70, 0.8));
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #F7D046;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #e6c141;
 }
