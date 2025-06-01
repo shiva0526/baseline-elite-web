@@ -1,47 +1,36 @@
 
-import { useRef } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { Sphere, OrbitControls } from '@react-three/drei';
 import { motion } from 'framer-motion';
-import * as THREE from 'three';
-
-const RotatingBasketball = () => {
-  const meshRef = useRef<THREE.Mesh>(null);
-
-  useFrame((state) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime) * 0.1;
-      meshRef.current.rotation.y += 0.01;
-    }
-  });
-
-  return (
-    <mesh ref={meshRef}>
-      <Sphere args={[2, 32, 32]}>
-        <meshStandardMaterial
-          color="#ff6b35"
-          roughness={0.3}
-          metalness={0.1}
-        />
-      </Sphere>
-    </mesh>
-  );
-};
 
 const Basketball3D = () => {
   return (
     <motion.div 
-      className="w-full h-96"
+      className="w-full h-96 flex items-center justify-center"
       initial={{ scale: 0 }}
       animate={{ scale: 1 }}
       transition={{ duration: 1 }}
     >
-      <Canvas camera={{ position: [0, 0, 8], fov: 50 }}>
-        <ambientLight intensity={0.5} />
-        <pointLight position={[10, 10, 10]} />
-        <RotatingBasketball />
-        <OrbitControls enableZoom={false} enablePan={false} />
-      </Canvas>
+      <motion.div
+        className="w-32 h-32 bg-gradient-to-br from-orange-500 to-orange-700 rounded-full shadow-2xl"
+        animate={{ 
+          rotateY: 360,
+          rotateX: [0, 10, 0]
+        }}
+        transition={{ 
+          rotateY: { duration: 3, repeat: Infinity, ease: "linear" },
+          rotateX: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+        }}
+        style={{
+          background: 'linear-gradient(45deg, #ff6b35, #f7931e)',
+          boxShadow: '0 10px 30px rgba(255, 107, 53, 0.3)',
+        }}
+      >
+        {/* Basketball lines */}
+        <div className="w-full h-full relative">
+          <div className="absolute top-1/2 left-0 w-full h-0.5 bg-black/20 transform -translate-y-1/2"></div>
+          <div className="absolute left-1/2 top-0 w-0.5 h-full bg-black/20 transform -translate-x-1/2"></div>
+          <div className="absolute top-1/4 left-1/4 w-1/2 h-1/2 border border-black/20 rounded-full"></div>
+        </div>
+      </motion.div>
     </motion.div>
   );
 };
