@@ -2,7 +2,7 @@
 import { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Sphere, OrbitControls } from '@react-three/drei';
-import { motion } from 'framer-motion-3d';
+import { motion } from 'framer-motion';
 import * as THREE from 'three';
 
 const RotatingBasketball = () => {
@@ -16,12 +16,7 @@ const RotatingBasketball = () => {
   });
 
   return (
-    <motion.mesh
-      ref={meshRef}
-      initial={{ scale: 0 }}
-      animate={{ scale: 1 }}
-      transition={{ duration: 1 }}
-    >
+    <mesh ref={meshRef}>
       <Sphere args={[2, 32, 32]}>
         <meshStandardMaterial
           color="#ff6b35"
@@ -29,20 +24,25 @@ const RotatingBasketball = () => {
           metalness={0.1}
         />
       </Sphere>
-    </motion.mesh>
+    </mesh>
   );
 };
 
 const Basketball3D = () => {
   return (
-    <div className="w-full h-96">
+    <motion.div 
+      className="w-full h-96"
+      initial={{ scale: 0 }}
+      animate={{ scale: 1 }}
+      transition={{ duration: 1 }}
+    >
       <Canvas camera={{ position: [0, 0, 8], fov: 50 }}>
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} />
         <RotatingBasketball />
         <OrbitControls enableZoom={false} enablePan={false} />
       </Canvas>
-    </div>
+    </motion.div>
   );
 };
 
