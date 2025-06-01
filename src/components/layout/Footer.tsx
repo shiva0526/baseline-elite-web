@@ -1,15 +1,43 @@
 
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Instagram, Mail, Phone } from 'lucide-react';
+import { Instagram, Mail, Phone, MapPin } from 'lucide-react';
 
 const Footer = () => {
+  const footerVariants = {
+    hidden: { opacity: 0, y: 50 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.8,
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6 },
+    },
+  };
+
   return (
-    <footer className="bg-black text-white">
+    <footer className="bg-black text-white relative z-10">
       <div className="container mx-auto">
         {/* Top section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 py-16 px-4">
+        <motion.div
+          variants={footerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 py-16 px-4"
+        >
           {/* Logo & About */}
-          <div className="space-y-4">
+          <motion.div variants={itemVariants} className="space-y-6">
             <Link to="/" className="inline-block">
               <img 
                 src="/images/Logo-Baseline-copy.png" 
@@ -17,78 +45,127 @@ const Footer = () => {
                 className="h-16 mb-4" 
               />
             </Link>
-            <p className="text-gray-300">
-              BaseLine Academy provides elite basketball training, developing athletes who want to excel in their game and reach professional levels.
+            <p className="text-gray-300 leading-relaxed">
+              Baseline Elite provides world-class basketball training, developing athletes who want to excel in their game and reach professional levels.
             </p>
-          </div>
+            <div className="flex gap-4">
+              <motion.a
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                href="#"
+                className="w-10 h-10 bg-baseline-yellow text-black rounded-full flex items-center justify-center hover:bg-baseline-yellow/90 transition-colors"
+              >
+                <Instagram size={20} />
+              </motion.a>
+              <motion.a
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                href="mailto:info@baselineelite.com"
+                className="w-10 h-10 bg-baseline-yellow text-black rounded-full flex items-center justify-center hover:bg-baseline-yellow/90 transition-colors"
+              >
+                <Mail size={20} />
+              </motion.a>
+            </div>
+          </motion.div>
           
           {/* Quick Links */}
-          <div className="space-y-4">
-            <h4 className="font-display font-bold text-xl border-b-2 border-baseline-yellow pb-2 inline-block">
+          <motion.div variants={itemVariants} className="space-y-6">
+            <h4 className="font-display font-bold text-xl text-baseline-yellow">
               Quick Links
             </h4>
-            <nav className="flex flex-col space-y-2">
-              <Link to="/" className="hover:text-baseline-yellow transition-colors duration-200">Home</Link>
-              <Link to="/about" className="hover:text-baseline-yellow transition-colors duration-200">About Us</Link>
-              <Link to="/programs" className="hover:text-baseline-yellow transition-colors duration-200">Programs</Link>
-              <Link to="/gallery" className="hover:text-baseline-yellow transition-colors duration-200">Gallery</Link>
-              <Link to="/schedule" className="hover:text-baseline-yellow transition-colors duration-200">Schedule</Link>
-              <Link to="/contact" className="hover:text-baseline-yellow transition-colors duration-200">Contact</Link>
+            <nav className="flex flex-col space-y-3">
+              {['Home', 'About Us', 'Programs', 'Gallery', 'Schedule', 'Contact'].map((link) => (
+                <motion.div
+                  key={link}
+                  whileHover={{ x: 5 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Link 
+                    to={`/${link.toLowerCase().replace(' ', '-')}`} 
+                    className="hover:text-baseline-yellow transition-colors duration-200 text-gray-300"
+                  >
+                    {link}
+                  </Link>
+                </motion.div>
+              ))}
             </nav>
-          </div>
+          </motion.div>
           
           {/* Programs */}
-          <div className="space-y-4">
-            <h4 className="font-display font-bold text-xl border-b-2 border-baseline-yellow pb-2 inline-block">
+          <motion.div variants={itemVariants} className="space-y-6">
+            <h4 className="font-display font-bold text-xl text-baseline-yellow">
               Training Programs
             </h4>
-            <nav className="flex flex-col space-y-2">
-              <Link to="/programs" className="hover:text-baseline-yellow transition-colors duration-200">
-                3-Day Batch
-              </Link>
-              <Link to="/programs" className="hover:text-baseline-yellow transition-colors duration-200">
-                5-Day Batch
-              </Link>
-              <Link to="/programs" className="hover:text-baseline-yellow transition-colors duration-200">
-                One-to-One Coaching
-              </Link>
-              <Link to="/programs" className="hover:text-baseline-yellow transition-colors duration-200">
-                Elite Training
-              </Link>
+            <nav className="flex flex-col space-y-3">
+              {['3-Day Batch', '5-Day Batch', 'One-to-One Coaching', 'Elite Training'].map((program) => (
+                <motion.div
+                  key={program}
+                  whileHover={{ x: 5 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Link 
+                    to="/programs" 
+                    className="hover:text-baseline-yellow transition-colors duration-200 text-gray-300"
+                  >
+                    {program}
+                  </Link>
+                </motion.div>
+              ))}
             </nav>
-          </div>
+          </motion.div>
           
           {/* Contact Info */}
-          <div className="space-y-4">
-            <h4 className="font-display font-bold text-xl border-b-2 border-baseline-yellow pb-2 inline-block">
+          <motion.div variants={itemVariants} className="space-y-6">
+            <h4 className="font-display font-bold text-xl text-baseline-yellow">
               Contact Us
             </h4>
             <div className="space-y-4">
-              <div className="flex items-center gap-4">
+              <motion.div
+                whileHover={{ x: 5 }}
+                className="flex items-center gap-4 text-gray-300"
+              >
                 <Phone className="text-baseline-yellow" size={20} />
                 <span>+91 90000 00000</span>
-              </div>
-              <div className="flex items-center gap-4">
+              </motion.div>
+              <motion.div
+                whileHover={{ x: 5 }}
+                className="flex items-center gap-4 text-gray-300"
+              >
                 <Mail className="text-baseline-yellow" size={20} />
-                <span>info@baselineacademy.com</span>
-              </div>
-              <div className="flex items-center gap-4">
-                <Instagram className="text-baseline-yellow" size={20} />
-                <span>@baselineacademy</span>
-              </div>
+                <span>info@baselineelite.com</span>
+              </motion.div>
+              <motion.div
+                whileHover={{ x: 5 }}
+                className="flex items-center gap-4 text-gray-300"
+              >
+                <MapPin className="text-baseline-yellow" size={20} />
+                <span>Basketball Courts, City Center</span>
+              </motion.div>
               <div className="mt-6">
-                <Link to="/contact" className="button-outline">
-                  Get in Touch
+                <Link to="/contact">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="border-2 border-baseline-yellow text-baseline-yellow font-semibold px-6 py-3 rounded-lg hover:bg-baseline-yellow hover:text-black transition-all duration-300"
+                  >
+                    Get in Touch
+                  </motion.button>
                 </Link>
               </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
         
         {/* Bottom / Copyright */}
-        <div className="border-t border-gray-800 py-8 px-4 text-center text-gray-400">
-          <p>© {new Date().getFullYear()} BaseLine Academy. All rights reserved.</p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="border-t border-gray-800 py-8 px-4 text-center text-gray-400"
+        >
+          <p>© {new Date().getFullYear()} Baseline Elite Academy. All rights reserved.</p>
+        </motion.div>
       </div>
     </footer>
   );

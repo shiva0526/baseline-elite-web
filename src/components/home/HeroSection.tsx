@@ -1,26 +1,40 @@
 
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
+import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-// Note: This is a simplified version without actual GSAP implementation
-// In a real implementation, we would import GSAP and use it for animations
+import Basketball3D from '@/components/effects/Basketball3D';
 
 const HeroSection = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const headingRef = useRef<HTMLHeadingElement>(null);
-  const subHeadingRef = useRef<HTMLDivElement>(null);
-  const ctaRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    // In a real implementation, we would initialize GSAP animations here
-    // For now, we'll use CSS animations defined in our tailwind.config
-  }, []);
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.3,
+        duration: 0.6,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.8,
+        ease: "easeOut",
+      },
+    },
+  };
 
   return (
-    <section className="relative h-screen overflow-hidden bg-black">
+    <section className="relative h-screen overflow-hidden bg-black flex items-center">
       {/* Background Video */}
-      <div className="absolute inset-0 opacity-60">
+      <div className="absolute inset-0 opacity-40">
         <video 
           ref={videoRef}
           autoPlay 
@@ -34,49 +48,85 @@ const HeroSection = () => {
         </video>
       </div>
       
-      {/* Overlay Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black"></div>
+      {/* Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent"></div>
       
       {/* Content */}
-      <div className="relative container mx-auto h-full flex flex-col justify-center px-4">
-        <div className="max-w-3xl">
-          <h1 
-            ref={headingRef}
-            className="text-4xl md:text-6xl lg:text-7xl font-display font-bold text-white mb-6 animate-fade-in"
+      <div className="relative container mx-auto h-full flex items-center px-4 z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center w-full">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="max-w-2xl"
           >
-            <span className="block">Train Different.</span>
-            <span className="block">Train Elite.</span>
-            <span className="gradient-text">Train BaseLine.</span>
-          </h1>
+            <motion.h1 
+              variants={itemVariants}
+              className="text-5xl md:text-7xl lg:text-8xl font-display font-bold text-white mb-6"
+            >
+              <span className="block">Level Up</span>
+              <span className="block gradient-text">Your Game</span>
+            </motion.h1>
+            
+            <motion.div 
+              variants={itemVariants}
+              className="text-xl md:text-2xl text-gray-200 mb-8 max-w-xl"
+            >
+              Join the elite basketball academy where champions are made. 
+              Professional coaching, modern facilities, proven results.
+            </motion.div>
+            
+            <motion.div 
+              variants={itemVariants}
+              className="flex flex-wrap gap-4"
+            >
+              <Link to="/programs" className="group">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="bg-baseline-yellow text-baseline-black font-bold px-8 py-4 rounded-lg flex items-center gap-3 transition-all duration-300 hover:shadow-2xl hover:shadow-baseline-yellow/30"
+                >
+                  Join Now
+                  <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                </motion.button>
+              </Link>
+              <Link to="/about">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="border-2 border-baseline-yellow text-baseline-yellow font-bold px-8 py-4 rounded-lg transition-all duration-300 hover:bg-baseline-yellow hover:text-baseline-black"
+                >
+                  Learn More
+                </motion.button>
+              </Link>
+            </motion.div>
+          </motion.div>
           
-          <div 
-            ref={subHeadingRef}
-            className="text-xl md:text-2xl text-gray-200 mb-8 max-w-xl animate-fade-in"
-            style={{ animationDelay: '0.3s' }}
+          {/* 3D Basketball */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.5, duration: 1 }}
+            className="hidden lg:flex justify-center items-center"
           >
-            Unlock your full potential with elite basketball training backed by science and experience.
-          </div>
-          
-          <div 
-            ref={ctaRef}
-            className="flex flex-wrap gap-4 animate-fade-in"
-            style={{ animationDelay: '0.6s' }}
-          >
-            <Link to="/programs" className="button-primary flex items-center gap-2">
-              Explore Programs <ArrowRight size={18} />
-            </Link>
-            <Link to="/contact" className="button-outline">
-              Join Now
-            </Link>
-          </div>
+            <Basketball3D />
+          </motion.div>
         </div>
       </div>
       
       {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center">
-        <span className="text-white text-sm mb-2">Scroll Down</span>
-        <div className="w-0.5 h-16 bg-gradient-to-b from-baseline-yellow to-transparent animate-bounce-subtle"></div>
-      </div>
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.5 }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center"
+      >
+        <motion.div
+          animate={{ y: [0, 10, 0] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          className="w-0.5 h-16 bg-gradient-to-b from-baseline-yellow to-transparent"
+        />
+      </motion.div>
     </section>
   );
 };

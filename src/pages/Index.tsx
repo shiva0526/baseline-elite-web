@@ -1,10 +1,12 @@
 
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import HeroSection from '@/components/home/HeroSection';
-import FeaturesSection from '@/components/home/FeaturesSection';
-import ProgramsPreview from '@/components/home/ProgramsPreview';
+import WhyUsSection from '@/components/home/WhyUsSection';
+import PricingSection from '@/components/home/PricingSection';
 import TestimonialsSection from '@/components/home/TestimonialsSection';
-import CallToAction from '@/components/home/CallToAction';
+import VideoSection from '@/components/home/VideoSection';
+import ParticleBackground from '@/components/effects/ParticleBackground';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { X } from 'lucide-react';
@@ -42,12 +44,17 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-white relative overflow-hidden">
+      <ParticleBackground />
       <Navbar />
       
       {/* Announcement Banner */}
       {showAnnouncement && announcement && (
-        <div className="fixed top-20 inset-x-0 z-40 animate-fade-in">
+        <motion.div 
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="fixed top-20 inset-x-0 z-40"
+        >
           <div className="container mx-auto px-4">
             <div className="bg-baseline-yellow/90 text-black font-medium p-4 rounded-lg shadow-lg flex justify-between items-center">
               <p>{announcement}</p>
@@ -59,14 +66,14 @@ const Index = () => {
               </button>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
       
       <HeroSection />
-      <FeaturesSection />
-      <ProgramsPreview />
+      <WhyUsSection />
+      <PricingSection />
       <TestimonialsSection />
-      <CallToAction />
+      <VideoSection />
       <Footer />
     </div>
   );
