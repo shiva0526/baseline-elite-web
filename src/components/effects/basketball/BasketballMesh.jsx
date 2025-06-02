@@ -7,7 +7,7 @@ import { createBasketballTexture } from './basketballTexture';
 import BasketballLighting from './BasketballLighting';
 
 const BasketballMesh = () => {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const meshRef = useRef(null);
   const [hovered, setHovered] = useState(false);
   const [clicked, setClicked] = useState(false);
 
