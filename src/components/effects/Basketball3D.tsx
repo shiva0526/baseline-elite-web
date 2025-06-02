@@ -1,4 +1,3 @@
-
 import { useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
@@ -245,8 +244,7 @@ const Basketball3D = () => {
         style={{ background: 'transparent' }}
         gl={{ 
           antialias: true, 
-          alpha: true,
-          shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap }
+          alpha: true
         }}
         dpr={[1, 2]}
       >
