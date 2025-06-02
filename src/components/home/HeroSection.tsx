@@ -3,10 +3,10 @@ import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import Basketball3D from '../effects/Basketball3D';
+import Basketball3D from '@/components/effects/Basketball3D';
 
 const HeroSection = () => {
-  const videoRef = useRef(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const containerVariants = {
     hidden: { opacity: 0 },
