@@ -14,7 +14,7 @@ import Login from "./pages/Login";
 import CoachDashboard from "./pages/CoachDashboard";
 import ParentDashboard from "./pages/ParentDashboard";
 import NotFound from "./pages/NotFound";
-import RouteGuard from "./components/auth/RouteGuard";
+import { RouteGuard } from "./components/auth/RouteGuard";
 
 const queryClient = new QueryClient();
 
