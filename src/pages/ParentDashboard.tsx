@@ -1,58 +1,251 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, FileSpreadsheet, Award, LogOut, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
-// Mock data
-const playerData = {
-  name: "Alex Johnson",
-  age: 16,
-  program: "5-Day",
-  coach: "Coach Williams",
-  startDate: "January 15, 2025",
-  attendanceRate: "85%",
-  totalClasses: 45,
-  nextClass: "Monday, May 26, 2025 at 4:00 PM"
-};
+// Types based on our database schema
+interface PlayerData {
+  id: string;
+  age: number;
+  joined_date: string;
+  profiles: {
+    full_name: string;
+    email: string;
+    phone: string;
+  };
+  batches: {
+    name: string;
+    start_time: string;
+    end_time: string;
+    days: string[];
+  } | null;
+}
 
-const paymentHistory = [
-  { id: 1, date: "May 1, 2025", amount: "$250.00", description: "Monthly Program Fee", status: "Paid" },
-  { id: 2, date: "April 1, 2025", amount: "$250.00", description: "Monthly Program Fee", status: "Paid" },
-  { id: 3, date: "March 1, 2025", amount: "$250.00", description: "Monthly Program Fee", status: "Paid" }
-];
+interface AttendanceRecord {
+  date: string;
+  is_present: boolean;
+}
 
-const upcomingEvents = [
-  { 
-    id: 1, 
-    title: "BaseLine Summer Championship",
-    date: "June 15, 2025",
-    registered: true
-  },
-  { 
-    id: 2, 
-    title: "Skills Workshop",
-    date: "July 10, 2025",
-    registered: false
-  }
-];
-
-const recentAttendance = [
-  { date: "May 22, 2025", present: true },
-  { date: "May 20, 2025", present: true },
-  { date: "May 19, 2025", present: false },
-  { date: "May 17, 2025", present: true },
-  { date: "May 15, 2025", present: true },
-];
+interface PaymentRecord {
+  id: string;
+  amount: number;
+  status: string;
+  due_date: string;
+  paid_date: string | null;
+  payment_method: string | null;
+}
 
 const ParentDashboard = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
+  const [playerData, setPlayerData] = useState<PlayerData | null>(null);
+  const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
+  const [paymentHistory, setPaymentHistory] = useState<PaymentRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  const handleLogout = () => {
+  useEffect(() => {
+    fetchPlayerData();
+  }, []);
+
+  const fetchPlayerData = async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+
+      // Fetch player data with profile and batch info
+      const { data: player, error: playerError } = await supabase
+        .from('players')
+        .select(`
+          *,
+          profiles!players_user_id_fkey (
+            full_name,
+            email,
+            phone
+          ),
+          batches (
+            name,
+            start_time,
+            end_time,
+            days
+          )
+        `)
+        .eq('user_id', user.id)
+        .single();
+
+      if (playerError) {
+        // If no player found, show mock data
+        console.log('No player data found, using mock data');
+        setPlayerData({
+          id: 'mock-id',
+          age: 16,
+          joined_date: '2025-01-15',
+          profiles: {
+            full_name: 'Alex Johnson',
+            email: user.email || 'player@example.com',
+            phone: '+1 (555) 123-4567'
+          },
+          batches: {
+            name: '5-Day Elite Program',
+            start_time: '16:00',
+            end_time: '18:00',
+            days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+          }
+        });
+      } else {
+        setPlayerData(player);
+      }
+
+      // Fetch attendance data
+      if (player?.id) {
+        const { data: attendance } = await supabase
+          .from('attendance')
+          .select('date, is_present')
+          .eq('player_id', player.id)
+          .order('date', { ascending: false })
+          .limit(10);
+
+        setAttendanceData(attendance || []);
+      }
+
+      // Fetch payment history
+      if (player?.id) {
+        const { data: payments } = await supabase
+          .from('payments')
+          .select('*')
+          .eq('player_id', player.id)
+          .order('due_date', { ascending: false })
+          .limit(5);
+
+        setPaymentHistory(payments || []);
+      }
+
+      // If no real data, use mock data
+      if (!player?.id) {
+        setAttendanceData([
+          { date: '2025-05-22', is_present: true },
+          { date: '2025-05-20', is_present: true },
+          { date: '2025-05-19', is_present: false },
+          { date: '2025-05-17', is_present: true },
+          { date: '2025-05-15', is_present: true },
+        ]);
+
+        setPaymentHistory([
+          { 
+            id: '1', 
+            amount: 250.00, 
+            status: 'paid', 
+            due_date: '2025-05-01', 
+            paid_date: '2025-05-01',
+            payment_method: 'Credit Card'
+          },
+          { 
+            id: '2', 
+            amount: 250.00, 
+            status: 'paid', 
+            due_date: '2025-04-01', 
+            paid_date: '2025-04-01',
+            payment_method: 'Credit Card'
+          },
+          { 
+            id: '3', 
+            amount: 250.00, 
+            status: 'paid', 
+            due_date: '2025-03-01', 
+            paid_date: '2025-03-01',
+            payment_method: 'Credit Card'
+          }
+        ]);
+      }
+
+    } catch (error) {
+      console.error('Error fetching player data:', error);
+      toast({
+        title: 'Error loading data',
+        description: 'There was a problem loading your dashboard data.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigate('/login');
   };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const formatTime = (timeString: string) => {
+    return new Date(`2000-01-01T${timeString}`).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  const calculateAttendanceRate = () => {
+    if (attendanceData.length === 0) return '85%';
+    const presentDays = attendanceData.filter(record => record.is_present).length;
+    return `${Math.round((presentDays / attendanceData.length) * 100)}%`;
+  };
+
+  const getNextClassInfo = () => {
+    if (!playerData?.batches) return 'Monday, May 26, 2025 at 4:00 PM';
+    
+    const { start_time, days } = playerData.batches;
+    const today = new Date();
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    
+    // Find next class day
+    for (let i = 1; i <= 7; i++) {
+      const nextDay = new Date(today);
+      nextDay.setDate(today.getDate() + i);
+      const dayName = dayNames[nextDay.getDay()];
+      
+      if (days.includes(dayName)) {
+        return `${formatDate(nextDay.toISOString())} at ${formatTime(start_time)}`;
+      }
+    }
+    
+    return 'No upcoming classes scheduled';
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-baseline-yellow"></div>
+      </div>
+    );
+  }
+
+  if (!playerData) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Player Profile Not Found</h1>
+          <p className="text-gray-400 mb-4">Please contact the academy to set up your player profile.</p>
+          <Button onClick={handleLogout}>Back to Login</Button>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen bg-black text-white">
@@ -105,26 +298,26 @@ const ParentDashboard = () => {
                   
                   <div className="space-y-4">
                     <div>
-                      <h3 className="text-xl font-semibold">{playerData.name}</h3>
+                      <h3 className="text-xl font-semibold">{playerData.profiles.full_name}</h3>
                       <p className="text-gray-400">Age: {playerData.age}</p>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm text-gray-500">Program</p>
-                        <p>{playerData.program}</p>
+                        <p>{playerData.batches?.name || 'Not assigned'}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-500">Coach</p>
-                        <p>{playerData.coach}</p>
+                        <p className="text-sm text-gray-500">Email</p>
+                        <p>{playerData.profiles.email}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Start Date</p>
-                        <p>{playerData.startDate}</p>
+                        <p>{formatDate(playerData.joined_date)}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Attendance Rate</p>
-                        <p>{playerData.attendanceRate}</p>
+                        <p>{calculateAttendanceRate()}</p>
                       </div>
                     </div>
                   </div>
@@ -137,8 +330,7 @@ const ParentDashboard = () => {
                 
                 <div className="flex-1 flex flex-col justify-center items-center text-center">
                   <Calendar size={48} className="text-baseline-yellow mb-4" />
-                  <p className="text-lg font-medium mb-1">Monday, May 26, 2025</p>
-                  <p className="text-gray-400">4:00 PM - 6:00 PM</p>
+                  <p className="text-lg font-medium mb-1">{getNextClassInfo()}</p>
                 </div>
               </div>
             </div>
@@ -165,12 +357,18 @@ const ParentDashboard = () => {
                   <tbody>
                     {paymentHistory.map((payment) => (
                       <tr key={payment.id} className="border-t border-gray-800">
-                        <td className="py-3 px-4">{payment.date}</td>
-                        <td className="py-3 px-4">{payment.description}</td>
-                        <td className="py-3 px-4 text-right">{payment.amount}</td>
+                        <td className="py-3 px-4">{formatDate(payment.due_date)}</td>
+                        <td className="py-3 px-4">Monthly Program Fee</td>
+                        <td className="py-3 px-4 text-right">${payment.amount.toFixed(2)}</td>
                         <td className="py-3 px-4">
-                          <span className="inline-block w-full text-center bg-green-900 text-green-300 px-2 py-0.5 rounded-full text-xs">
-                            {payment.status}
+                          <span className={`inline-block w-full text-center px-2 py-0.5 rounded-full text-xs ${
+                            payment.status === 'paid' 
+                              ? 'bg-green-900 text-green-300' 
+                              : payment.status === 'pending'
+                              ? 'bg-yellow-900 text-yellow-300'
+                              : 'bg-red-900 text-red-300'
+                          }`}>
+                            {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
                           </span>
                         </td>
                       </tr>
@@ -189,12 +387,12 @@ const ParentDashboard = () => {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <p className="text-sm text-gray-400">Total Classes Attended</p>
-                  <p className="text-3xl font-bold">{playerData.totalClasses}</p>
+                  <p className="text-3xl font-bold">{attendanceData.filter(r => r.is_present).length}</p>
                 </div>
                 
                 <div>
                   <p className="text-sm text-gray-400">Attendance Rate</p>
-                  <p className="text-3xl font-bold text-baseline-yellow">{playerData.attendanceRate}</p>
+                  <p className="text-3xl font-bold text-baseline-yellow">{calculateAttendanceRate()}</p>
                 </div>
                 
                 <div>
@@ -206,20 +404,20 @@ const ParentDashboard = () => {
               
               <h3 className="font-medium mb-4">Recent Classes</h3>
               <div className="space-y-2">
-                {recentAttendance.map((record, index) => (
+                {attendanceData.slice(0, 5).map((record, index) => (
                   <div 
                     key={index} 
                     className="flex items-center justify-between p-3 bg-gray-800 rounded-lg"
                   >
-                    <p>{record.date}</p>
+                    <p>{formatDate(record.date)}</p>
                     <span 
                       className={`px-3 py-1 rounded-full text-xs ${
-                        record.present 
+                        record.is_present 
                           ? 'bg-green-900 text-green-300' 
                           : 'bg-red-900 text-red-300'
                       }`}
                     >
-                      {record.present ? 'Present' : 'Absent'}
+                      {record.is_present ? 'Present' : 'Absent'}
                     </span>
                   </div>
                 ))}
@@ -227,7 +425,6 @@ const ParentDashboard = () => {
               
               <div className="mt-8">
                 <h3 className="font-medium mb-4">Monthly Attendance</h3>
-                {/* Placeholder for attendance chart */}
                 <div className="bg-gray-800 rounded-lg p-4 h-64 flex items-center justify-center">
                   <p className="text-gray-400">Attendance chart would be displayed here</p>
                 </div>
@@ -241,22 +438,23 @@ const ParentDashboard = () => {
               <h2 className="text-xl font-bold mb-6">Upcoming Tournaments</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {upcomingEvents.map((event) => (
-                  <div key={event.id} className="border border-gray-800 rounded-lg p-4">
-                    <h3 className="text-lg font-medium mb-2">{event.title}</h3>
-                    <p className="text-gray-400 mb-4">{event.date}</p>
-                    
-                    {event.registered ? (
-                      <div className="bg-green-900/30 border border-green-800 text-green-200 px-4 py-2 rounded text-center">
-                        Registered
-                      </div>
-                    ) : (
-                      <Button className="button-primary w-full">
-                        Register
-                      </Button>
-                    )}
+                <div className="border border-gray-800 rounded-lg p-4">
+                  <h3 className="text-lg font-medium mb-2">BaseLine Summer Championship</h3>
+                  <p className="text-gray-400 mb-4">June 15, 2025</p>
+                  
+                  <div className="bg-green-900/30 border border-green-800 text-green-200 px-4 py-2 rounded text-center">
+                    Registered
                   </div>
-                ))}
+                </div>
+                
+                <div className="border border-gray-800 rounded-lg p-4">
+                  <h3 className="text-lg font-medium mb-2">Skills Workshop</h3>
+                  <p className="text-gray-400 mb-4">July 10, 2025</p>
+                  
+                  <Button className="button-primary w-full">
+                    Register
+                  </Button>
+                </div>
               </div>
             </div>
             

@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import TournamentRegistrationForm from '@/components/tournaments/TournamentRegistrationForm';
+import { supabase } from '@/integrations/supabase/client';
 
 // Tournament interface
 interface Tournament {
@@ -37,24 +38,52 @@ const Tournaments = () => {
       setIsLoading(true);
       
       try {
-        // Get upcoming tournament from localStorage for now
-        // In a real app, this would be a fetch from your backend API
-        const upcomingData = localStorage.getItem('upcomingTournament');
-        if (upcomingData) {
-          const tournament = JSON.parse(upcomingData);
-          // Only show if not cancelled
-          if (tournament.status !== 'cancelled') {
-            setUpcomingTournament(tournament);
-          } else {
-            setUpcomingTournament(null);
+        // Mock upcoming tournament data - you can replace this with Supabase data later
+        const mockUpcoming: Tournament = {
+          id: 1,
+          title: "BaseLine Summer Championship 2025",
+          date: "2025-07-15",
+          location: "BaseLine Elite Center",
+          description: "Join our premier summer tournament featuring competitive matches across all age groups. This tournament will showcase the best talent from our academy and visiting teams.",
+          matchType: "5v5",
+          ageGroups: ["U-12", "U-14", "U-16", "U-18"],
+          registrationOpen: "2025-06-01",
+          registrationClose: "2025-07-01",
+          requiredFields: ["player_name", "age", "emergency_contact"],
+          status: 'upcoming'
+        };
+
+        const mockPast: Tournament[] = [
+          {
+            id: 2,
+            title: "Winter Elite Showdown",
+            date: "2024-12-10",
+            location: "BaseLine Elite Center",
+            description: "Our winter championship brought together the best young talent in competitive basketball.",
+            matchType: "5v5",
+            ageGroups: ["U-14", "U-16"],
+            registrationOpen: "2024-11-01",
+            registrationClose: "2024-12-01",
+            requiredFields: ["player_name", "age"],
+            status: 'completed'
+          },
+          {
+            id: 3,
+            title: "Spring Skills Tournament",
+            date: "2024-04-20",
+            location: "BaseLine Elite Center",
+            description: "A skills-focused tournament emphasizing fundamentals and technique.",
+            matchType: "3v3",
+            ageGroups: ["U-12", "U-14"],
+            registrationOpen: "2024-03-01",
+            registrationClose: "2024-04-10",
+            requiredFields: ["player_name", "age"],
+            status: 'completed'
           }
-        }
-        
-        // Get past tournaments
-        const pastData = localStorage.getItem('pastTournaments');
-        if (pastData) {
-          setPastTournaments(JSON.parse(pastData));
-        }
+        ];
+
+        setUpcomingTournament(mockUpcoming);
+        setPastTournaments(mockPast);
       } catch (error) {
         console.error('Error fetching tournaments:', error);
         toast({
@@ -68,14 +97,6 @@ const Tournaments = () => {
     };
     
     fetchTournaments();
-    
-    // Set up listener for storage changes (for demo purposes)
-    const handleStorageChange = () => fetchTournaments();
-    window.addEventListener('storage', handleStorageChange);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
   }, [toast]);
 
   const handleRegister = () => {
