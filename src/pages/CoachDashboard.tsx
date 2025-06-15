@@ -81,6 +81,8 @@ const CoachDashboard = () => {
   const [tournamentToCancel, setTournamentToCancel] = useState<number | null>(null);
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+  const [playerToRemove, setPlayerToRemove] = useState<Player | null>(null);
   
   // Tournament Form State
   const [tournamentForm, setTournamentForm] = useState({
@@ -225,6 +227,35 @@ const CoachDashboard = () => {
       title: "Player added",
       description: `${newPlayer.name} has been added to the ${newPlayer.program} program.`,
     });
+  };
+
+  const handleRemovePlayer = (player: Player) => {
+    setPlayerToRemove(player);
+    setShowRemoveConfirm(true);
+  };
+
+  const confirmRemovePlayer = () => {
+    if (!playerToRemove) return;
+
+    setPlayers(prev => prev.filter(p => p.id !== playerToRemove.id));
+    
+    setAttendance(prev => {
+      const { [playerToRemove.id]: removed, ...rest } = prev;
+      return rest;
+    });
+
+    toast({
+      title: "Player removed",
+      description: `${playerToRemove.name} has been removed from the program.`,
+    });
+
+    setShowRemoveConfirm(false);
+    setPlayerToRemove(null);
+  };
+
+  const cancelRemovePlayer = () => {
+    setShowRemoveConfirm(false);
+    setPlayerToRemove(null);
   };
   
   const handlePublishAnnouncement = () => {
@@ -717,42 +748,63 @@ const CoachDashboard = () => {
                 </div>
               </motion.div>
               
-              {/* View Players */}
+              {/* Player Management */}
               <motion.div 
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="bg-gray-900/40 backdrop-blur-lg rounded-xl border border-gray-800/50 p-6 shadow-2xl"
               >
-                <h2 className="text-xl font-bold mb-6 text-baseline-yellow">All Players</h2>
+                <h2 className="text-xl font-bold mb-6 text-baseline-yellow">Player Management</h2>
                 
-                <div className="overflow-y-auto max-h-[400px] rounded-lg border border-gray-800/50">
-                  <table className="w-full border-collapse bg-gray-900/30">
-                    <thead className="sticky top-0 bg-gray-800/80 backdrop-blur-sm">
-                      <tr>
-                        <th className="text-left py-3 px-4 font-medium">Name</th>
-                        <th className="py-3 px-4 text-center font-medium">Program</th>
-                        <th className="py-3 px-4 text-center font-medium">Classes</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {players.map((player) => (
-                        <motion.tr 
-                          key={player.id} 
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="border-t border-gray-800/30 hover:bg-gray-800/20 transition-colors"
-                        >
-                          <td className="py-3 px-4 font-medium">{player.name}</td>
-                          <td className="py-3 px-4 text-center">
-                            <span className="px-2 py-1 bg-baseline-yellow/20 text-baseline-yellow rounded-full text-xs">
-                              {player.program}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-center font-semibold">{player.attendedClasses}</td>
-                        </motion.tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="space-y-4 max-h-[400px] overflow-y-auto">
+                  <AnimatePresence mode="popLayout">
+                    {players.map((player) => (
+                      <motion.div
+                        key={player.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: -100, transition: { duration: 0.2 } }}
+                        layout
+                        className="bg-gray-800/30 backdrop-blur-sm border border-gray-700/50 rounded-lg p-4 hover:bg-gray-800/50 transition-all duration-200"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-white mb-1">{player.name}</h3>
+                            <div className="flex items-center space-x-3 text-sm text-gray-400">
+                              <span className="px-2 py-1 bg-baseline-yellow/20 text-baseline-yellow rounded-full text-xs">
+                                {player.program}
+                              </span>
+                              <span className="flex items-center">
+                                <User size={12} className="mr-1" />
+                                ID: {player.id}
+                              </span>
+                              <span className="flex items-center">
+                                <CheckCircle size={12} className="mr-1" />
+                                {player.attendedClasses} classes
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemovePlayer(player)}
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all duration-200 hover:scale-105"
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                  
+                  {players.length === 0 && (
+                    <div className="text-center text-gray-500 py-8">
+                      <Users size={48} className="mx-auto mb-4 opacity-50" />
+                      <p>No players added yet</p>
+                      <p className="text-sm">Add your first player to get started!</p>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             </div>
@@ -1186,6 +1238,57 @@ const CoachDashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      {/* Remove Player Confirmation Dialog */}
+      <AnimatePresence>
+        {showRemoveConfirm && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          >
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-gray-900/90 backdrop-blur-lg rounded-xl border border-gray-700/50 max-w-md w-full p-6 shadow-2xl"
+            >
+              <div className="text-center mb-6">
+                <div className="mx-auto mb-4 w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
+                  <Trash2 size={24} className="text-red-400" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Remove Player?</h3>
+                <p className="text-gray-300">
+                  Are you sure you want to remove{' '}
+                  <span className="font-semibold text-baseline-yellow">
+                    {playerToRemove?.name}
+                  </span>{' '}
+                  from the program? This action cannot be undone.
+                </p>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button 
+                  variant="outline" 
+                  className="flex-1 border-gray-600 hover:bg-gray-800" 
+                  onClick={cancelRemovePlayer}
+                >
+                  <X size={18} className="mr-2" /> Cancel
+                </Button>
+                
+                <Button 
+                  variant="destructive" 
+                  className="flex-1 bg-red-600 hover:bg-red-700" 
+                  onClick={confirmRemovePlayer}
+                >
+                  <Check size={18} className="mr-2" /> Remove Player
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       {/* Confirmation Dialog */}
       <AnimatePresence>
