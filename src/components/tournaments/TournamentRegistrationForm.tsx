@@ -33,15 +33,18 @@ const TournamentRegistrationForm = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate form
-    const missingFields = tournament.requiredFields.filter(field => 
+    // Define required fields that must be filled
+    const essentialFields = ['Team Name', 'Captain First Name', 'Captain Last Name', 'Email', 'Phone Number'];
+    
+    // Validate essential fields
+    const missingEssentialFields = essentialFields.filter(field => 
       !formData[field] || formData[field].trim() === ''
     );
     
-    if (missingFields.length > 0) {
+    if (missingEssentialFields.length > 0) {
       toast({
         title: "Missing information",
-        description: `Please fill in all required fields: ${missingFields.join(', ')}`,
+        description: `Please fill in all required fields: ${missingEssentialFields.join(', ')}`,
         variant: "destructive"
       });
       return;
@@ -269,9 +272,8 @@ const TournamentRegistrationForm = ({
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-baseline-yellow border-b border-gray-700 pb-2">Captain Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {tournament.requiredFields.filter(field => 
-              field.includes('Captain')
-            ).map(field => renderFormField(field))}
+            {renderFormField('Captain First Name')}
+            {renderFormField('Captain Last Name')}
           </div>
         </div>
 
@@ -280,9 +282,8 @@ const TournamentRegistrationForm = ({
           <h3 className="text-lg font-semibold text-baseline-yellow border-b border-gray-700 pb-2">Players</h3>
           {[2, 3, 4, 5].map(num => (
             <div key={`player-${num}`} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {tournament.requiredFields.filter(field => 
-                field === `Player ${num} First Name` || field === `Player ${num} Last Name`
-              ).map(field => renderFormField(field))}
+              {renderFormField(`Player ${num} First Name`)}
+              {renderFormField(`Player ${num} Last Name`)}
             </div>
           ))}
         </div>
@@ -292,9 +293,8 @@ const TournamentRegistrationForm = ({
           <h3 className="text-lg font-semibold text-baseline-yellow border-b border-gray-700 pb-2">Substitutes</h3>
           {[1, 2, 3].map(num => (
             <div key={`substitute-${num}`} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {tournament.requiredFields.filter(field => 
-                field === `Substitute ${num} First Name` || field === `Substitute ${num} Last Name`
-              ).map(field => renderFormField(field))}
+              {renderFormField(`Substitute ${num} First Name`)}
+              {renderFormField(`Substitute ${num} Last Name`)}
             </div>
           ))}
         </div>
