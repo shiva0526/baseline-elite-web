@@ -48,8 +48,30 @@ const Tournaments = () => {
           matchType: "5v5",
           ageGroups: ["U-12", "U-14", "U-16", "U-18"],
           registrationOpen: "2025-06-01",
-          registrationClose: "2025-07-01",
-          requiredFields: ["player_name", "age", "emergency_contact"],
+          registrationClose: "2025-07-10",
+          requiredFields: [
+            "Team Name",
+            "Captain First Name",
+            "Captain Last Name", 
+            "Player 2 First Name",
+            "Player 2 Last Name",
+            "Player 3 First Name", 
+            "Player 3 Last Name",
+            "Player 4 First Name",
+            "Player 4 Last Name",
+            "Player 5 First Name",
+            "Player 5 Last Name",
+            "Substitute 1 First Name",
+            "Substitute 1 Last Name",
+            "Substitute 2 First Name", 
+            "Substitute 2 Last Name",
+            "Substitute 3 First Name",
+            "Substitute 3 Last Name",
+            "Email",
+            "Phone Number",
+            "Team Logo",
+            "Any Questions?"
+          ],
           status: 'upcoming'
         };
 
@@ -82,8 +104,58 @@ const Tournaments = () => {
           }
         ];
 
-        setUpcomingTournament(mockUpcoming);
-        setPastTournaments(mockPast);
+        // Add more upcoming tournaments for testing
+        const allTournaments = [
+          mockUpcoming,
+          {
+            id: 4,
+            title: "Winter Elite Championship 2025",
+            date: "2025-12-15", 
+            location: "BaseLine Elite Center",
+            description: "End the year with our premier winter tournament featuring the best teams.",
+            matchType: "5v5",
+            ageGroups: ["U-16", "U-18"],
+            registrationOpen: "2025-11-01",
+            registrationClose: "2025-11-30",
+            requiredFields: [
+              "Team Name",
+              "Captain First Name",
+              "Captain Last Name", 
+              "Player 2 First Name",
+              "Player 2 Last Name",
+              "Player 3 First Name", 
+              "Player 3 Last Name",
+              "Player 4 First Name",
+              "Player 4 Last Name",
+              "Player 5 First Name",
+              "Player 5 Last Name",
+              "Substitute 1 First Name",
+              "Substitute 1 Last Name",
+              "Email",
+              "Phone Number",
+              "Any Questions?"
+            ],
+            status: 'upcoming' as const
+          }
+        ];
+
+        // Filter tournaments based on registration deadline
+        const today = new Date();
+        const upcoming = allTournaments.filter(tournament => {
+          const closeDate = new Date(tournament.registrationClose);
+          return closeDate >= today;
+        });
+
+        const pastFromUpcoming = allTournaments.filter(tournament => {
+          const closeDate = new Date(tournament.registrationClose);
+          return closeDate < today;
+        });
+
+        // Set upcoming tournaments (show only first one for simplicity)
+        setUpcomingTournament(upcoming.length > 0 ? upcoming[0] : null);
+        
+        // Combine past tournaments
+        setPastTournaments([...mockPast, ...pastFromUpcoming]);
       } catch (error) {
         console.error('Error fetching tournaments:', error);
         toast({

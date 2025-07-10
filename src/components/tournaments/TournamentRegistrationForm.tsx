@@ -97,100 +97,138 @@ const TournamentRegistrationForm = ({
       case 'Team Name':
         return (
           <div key={field}>
-            <label className="block text-sm font-medium mb-1">Team Name</label>
+            <label className="block text-sm font-medium mb-1">Team Name *</label>
             <input
               type="text"
               value={formData[field] || ''}
               onChange={e => handleChange(field, e.target.value)}
               className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-2"
               placeholder="Enter your team name"
+              required
             />
           </div>
         );
-      case 'Age Group':
+      
+      case 'Captain First Name':
+      case 'Captain Last Name':
         return (
           <div key={field}>
-            <label className="block text-sm font-medium mb-1">Age Group</label>
-            <select
-              value={formData[field] || ''}
-              onChange={e => handleChange(field, e.target.value)}
-              className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-2"
-            >
-              <option value="">Select age group</option>
-              <option value="U15">U15</option>
-              <option value="U16">U16</option>
-              <option value="U17">U17</option>
-              <option value="U18">U18</option>
-              <option value="U19">U19</option>
-            </select>
-          </div>
-        );
-      case 'Contact Name':
-        return (
-          <div key={field}>
-            <label className="block text-sm font-medium mb-1">Contact Name</label>
+            <label className="block text-sm font-medium mb-1">{field} *</label>
             <input
               type="text"
               value={formData[field] || ''}
               onChange={e => handleChange(field, e.target.value)}
               className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-2"
-              placeholder="Enter contact person's name"
+              placeholder={`Enter captain's ${field.toLowerCase().includes('first') ? 'first' : 'last'} name`}
+              required
             />
           </div>
         );
-      case 'Phone Number':
+
+      case 'Player 2 First Name':
+      case 'Player 2 Last Name':
+      case 'Player 3 First Name':
+      case 'Player 3 Last Name':
+      case 'Player 4 First Name':
+      case 'Player 4 Last Name':
+      case 'Player 5 First Name':
+      case 'Player 5 Last Name':
+        const playerNum = field.split(' ')[1];
+        const nameType = field.includes('First') ? 'first' : 'last';
         return (
           <div key={field}>
-            <label className="block text-sm font-medium mb-1">Phone Number</label>
+            <label className="block text-sm font-medium mb-1">{field}</label>
             <input
-              type="tel"
+              type="text"
               value={formData[field] || ''}
               onChange={e => handleChange(field, e.target.value)}
               className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-2"
-              placeholder="Enter contact phone number"
+              placeholder={`Enter player ${playerNum} ${nameType} name`}
             />
           </div>
         );
+
+      case 'Substitute 1 First Name':
+      case 'Substitute 1 Last Name':
+      case 'Substitute 2 First Name':
+      case 'Substitute 2 Last Name':
+      case 'Substitute 3 First Name':
+      case 'Substitute 3 Last Name':
+        const subNum = field.split(' ')[1];
+        const subNameType = field.includes('First') ? 'first' : 'last';
+        return (
+          <div key={field}>
+            <label className="block text-sm font-medium mb-1">{field}</label>
+            <input
+              type="text"
+              value={formData[field] || ''}
+              onChange={e => handleChange(field, e.target.value)}
+              className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-2"
+              placeholder={`Enter substitute ${subNum} ${subNameType} name`}
+            />
+          </div>
+        );
+
       case 'Email':
         return (
           <div key={field}>
-            <label className="block text-sm font-medium mb-1">Email</label>
+            <label className="block text-sm font-medium mb-1">Email *</label>
             <input
               type="email"
               value={formData[field] || ''}
               onChange={e => handleChange(field, e.target.value)}
               className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-2"
               placeholder="Enter contact email"
+              required
             />
           </div>
         );
-      case 'Player Names':
+
+      case 'Phone Number':
         return (
           <div key={field}>
-            <label className="block text-sm font-medium mb-1">Player Names</label>
-            <textarea
+            <label className="block text-sm font-medium mb-1">Phone Number *</label>
+            <input
+              type="tel"
               value={formData[field] || ''}
               onChange={e => handleChange(field, e.target.value)}
-              className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-2 min-h-[100px]"
-              placeholder="Enter player names (one per line)"
+              className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-2"
+              placeholder="Enter contact phone number"
+              required
             />
           </div>
         );
-      case 'Payment Screenshot':
+
+      case 'Team Logo':
         return (
           <div key={field}>
-            <label className="block text-sm font-medium mb-1">Payment Screenshot</label>
+            <label className="block text-sm font-medium mb-1">Team Logo</label>
             <div className="border border-dashed border-gray-700 rounded-md p-4 text-center bg-gray-800/50">
-              <p className="text-sm text-gray-400 mb-2">Upload payment confirmation screenshot</p>
+              <p className="text-sm text-gray-400 mb-2">Upload your team logo</p>
               <Button type="button" variant="outline" className="w-full">
-                Upload Image
+                Choose File
               </Button>
               <p className="text-xs text-gray-500 mt-2">
-                (This is a mock upload button - in a real app, this would upload to a server)
+                Supported formats: JPG, PNG, GIF (Max 5MB)
               </p>
             </div>
           </div>
         );
+
+      case 'Any Questions?':
+        return (
+          <div key={field}>
+            <label className="block text-sm font-medium mb-1">Any Questions?</label>
+            <textarea
+              value={formData[field] || ''}
+              onChange={e => handleChange(field, e.target.value)}
+              className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-2 min-h-[100px]"
+              placeholder="Any questions or special requests for your team?"
+              rows={4}
+            />
+          </div>
+        );
+
       default:
         return (
           <div key={field}>
@@ -216,8 +254,68 @@ const TournamentRegistrationForm = ({
         </button>
       </div>
       
-      <form onSubmit={handleSubmit} className="p-6 space-y-4">
-        {tournament.requiredFields.map(field => renderFormField(field))}
+      <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        {/* Team Information Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-baseline-yellow border-b border-gray-700 pb-2">Team Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {tournament.requiredFields.filter(field => 
+              field === 'Team Name' || field === 'Team Logo'
+            ).map(field => renderFormField(field))}
+          </div>
+        </div>
+
+        {/* Captain Information Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-baseline-yellow border-b border-gray-700 pb-2">Captain Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {tournament.requiredFields.filter(field => 
+              field.includes('Captain')
+            ).map(field => renderFormField(field))}
+          </div>
+        </div>
+
+        {/* Players Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-baseline-yellow border-b border-gray-700 pb-2">Players</h3>
+          {[2, 3, 4, 5].map(num => (
+            <div key={`player-${num}`} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {tournament.requiredFields.filter(field => 
+                field === `Player ${num} First Name` || field === `Player ${num} Last Name`
+              ).map(field => renderFormField(field))}
+            </div>
+          ))}
+        </div>
+
+        {/* Substitutes Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-baseline-yellow border-b border-gray-700 pb-2">Substitutes</h3>
+          {[1, 2, 3].map(num => (
+            <div key={`substitute-${num}`} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {tournament.requiredFields.filter(field => 
+                field === `Substitute ${num} First Name` || field === `Substitute ${num} Last Name`
+              ).map(field => renderFormField(field))}
+            </div>
+          ))}
+        </div>
+
+        {/* Contact Information Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-baseline-yellow border-b border-gray-700 pb-2">Contact Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {tournament.requiredFields.filter(field => 
+              field === 'Email' || field === 'Phone Number'
+            ).map(field => renderFormField(field))}
+          </div>
+        </div>
+
+        {/* Additional Information Section */}
+        {tournament.requiredFields.includes('Any Questions?') && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-baseline-yellow border-b border-gray-700 pb-2">Additional Information</h3>
+            {renderFormField('Any Questions?')}
+          </div>
+        )}
         
         <div className="pt-4 flex space-x-4">
           <Button
