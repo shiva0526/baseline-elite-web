@@ -33,129 +33,40 @@ const Tournaments = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load tournament data
+    // Load tournament data from localStorage (synced with Coach Dashboard)
     const fetchTournaments = () => {
       setIsLoading(true);
       
       try {
-        // Mock upcoming tournament data - you can replace this with Supabase data later
-        const mockUpcoming: Tournament = {
-          id: 1,
-          title: "BaseLine Summer Championship 2025",
-          date: "2025-07-15",
-          location: "BaseLine Elite Center",
-          description: "Join our premier summer tournament featuring competitive matches across all age groups. This tournament will showcase the best talent from our academy and visiting teams.",
-          matchType: "5v5",
-          ageGroups: ["U-12", "U-14", "U-16", "U-18"],
-          registrationOpen: "2025-06-01",
-          registrationClose: "2025-07-10",
-          requiredFields: [
-            "Team Name",
-            "Captain First Name",
-            "Captain Last Name", 
-            "Player 2 First Name",
-            "Player 2 Last Name",
-            "Player 3 First Name", 
-            "Player 3 Last Name",
-            "Player 4 First Name",
-            "Player 4 Last Name",
-            "Player 5 First Name",
-            "Player 5 Last Name",
-            "Substitute 1 First Name",
-            "Substitute 1 Last Name",
-            "Substitute 2 First Name", 
-            "Substitute 2 Last Name",
-            "Substitute 3 First Name",
-            "Substitute 3 Last Name",
-            "Email",
-            "Phone Number",
-            "Team Logo",
-            "Any Questions?"
-          ],
-          status: 'upcoming'
-        };
-
-        const mockPast: Tournament[] = [
-          {
-            id: 2,
-            title: "Winter Elite Showdown",
-            date: "2024-12-10",
-            location: "BaseLine Elite Center",
-            description: "Our winter championship brought together the best young talent in competitive basketball.",
-            matchType: "5v5",
-            ageGroups: ["U-14", "U-16"],
-            registrationOpen: "2024-11-01",
-            registrationClose: "2024-12-01",
-            requiredFields: ["player_name", "age"],
-            status: 'completed'
-          },
-          {
-            id: 3,
-            title: "Spring Skills Tournament",
-            date: "2024-04-20",
-            location: "BaseLine Elite Center",
-            description: "A skills-focused tournament emphasizing fundamentals and technique.",
-            matchType: "3v3",
-            ageGroups: ["U-12", "U-14"],
-            registrationOpen: "2024-03-01",
-            registrationClose: "2024-04-10",
-            requiredFields: ["player_name", "age"],
-            status: 'completed'
-          }
-        ];
-
-        // Add more upcoming tournaments for testing
-        const allTournaments = [
-          mockUpcoming,
-          {
-            id: 4,
-            title: "Winter Elite Championship 2025",
-            date: "2025-12-15", 
-            location: "BaseLine Elite Center",
-            description: "End the year with our premier winter tournament featuring the best teams.",
-            matchType: "5v5",
-            ageGroups: ["U-16", "U-18"],
-            registrationOpen: "2025-11-01",
-            registrationClose: "2025-11-30",
-            requiredFields: [
-              "Team Name",
-              "Captain First Name",
-              "Captain Last Name", 
-              "Player 2 First Name",
-              "Player 2 Last Name",
-              "Player 3 First Name", 
-              "Player 3 Last Name",
-              "Player 4 First Name",
-              "Player 4 Last Name",
-              "Player 5 First Name",
-              "Player 5 Last Name",
-              "Substitute 1 First Name",
-              "Substitute 1 Last Name",
-              "Email",
-              "Phone Number",
-              "Any Questions?"
-            ],
-            status: 'upcoming' as const
-          }
-        ];
-
-        // Filter tournaments based on registration deadline
-        const today = new Date();
-        const upcoming = allTournaments.filter(tournament => {
-          const closeDate = new Date(tournament.registrationClose);
-          return closeDate >= today;
-        });
-
-        const pastFromUpcoming = allTournaments.filter(tournament => {
-          const closeDate = new Date(tournament.registrationClose);
-          return closeDate < today;
-        });
-
-        // Set upcoming tournaments (show only first one for simplicity)
-        setUpcomingTournament(upcoming.length > 0 ? upcoming[0] : null);
+        // Load upcoming tournament from localStorage (created by coach)
+        const storedUpcoming = localStorage.getItem('upcomingTournament');
+        const upcomingFromStorage = storedUpcoming ? JSON.parse(storedUpcoming) : null;
         
-        // Combine past tournaments
-        setPastTournaments([...mockPast, ...pastFromUpcoming]);
+        // Load past tournaments from localStorage  
+        const storedPast = localStorage.getItem('pastTournaments');
+        const pastFromStorage = storedPast ? JSON.parse(storedPast) : [];
+        
+        // Check if upcoming tournament should move to past tournaments
+        const today = new Date();
+        let currentUpcoming = null;
+        let allPastTournaments = [...pastFromStorage];
+        
+        if (upcomingFromStorage) {
+          const closeDate = new Date(upcomingFromStorage.registrationClose);
+          
+          if (closeDate < today) {
+            // Move to past tournaments
+            allPastTournaments.push({ ...upcomingFromStorage, status: 'completed' });
+            localStorage.setItem('pastTournaments', JSON.stringify(allPastTournaments));
+            localStorage.removeItem('upcomingTournament');
+          } else {
+            currentUpcoming = upcomingFromStorage;
+          }
+        }
+        
+        // Set state
+        setUpcomingTournament(currentUpcoming);
+        setPastTournaments(allPastTournaments);
       } catch (error) {
         console.error('Error fetching tournaments:', error);
         toast({
@@ -169,6 +80,16 @@ const Tournaments = () => {
     };
     
     fetchTournaments();
+    
+    // Listen for storage events to sync with Coach Dashboard in real-time
+    const handleStorageChange = () => {
+      fetchTournaments();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, [toast]);
 
   const handleRegister = () => {

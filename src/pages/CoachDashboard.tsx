@@ -432,25 +432,66 @@ const CoachDashboard = () => {
       return;
     }
     
-    // Create CSV content
-    const headers = Object.keys(currentTournamentRegistrations[0]).join(',');
-    const rows = currentTournamentRegistrations.map(reg => Object.values(reg).join(','));
+    // Define ordered headers for better CSV structure
+    const orderedHeaders = [
+      'Team Name',
+      'Captain First Name',
+      'Captain Last Name',
+      'Player 2 First Name',
+      'Player 2 Last Name',
+      'Player 3 First Name',
+      'Player 3 Last Name',
+      'Player 4 First Name',
+      'Player 4 Last Name',
+      'Player 5 First Name',
+      'Player 5 Last Name',
+      'Substitute 1 First Name',
+      'Substitute 1 Last Name',
+      'Substitute 2 First Name',
+      'Substitute 2 Last Name',
+      'Substitute 3 First Name',
+      'Substitute 3 Last Name',
+      'Email',
+      'Phone Number',
+      'Any Questions?',
+      'Registration Date'
+    ];
+    
+    // Create CSV content with proper escaping
+    const escapeCSVField = (field: any) => {
+      if (field === null || field === undefined) return '';
+      const str = String(field);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+    
+    const headers = orderedHeaders.join(',');
+    const rows = currentTournamentRegistrations.map(reg => 
+      orderedHeaders.map(header => escapeCSVField(reg[header] || '')).join(',')
+    );
+    
     const csvContent = [headers, ...rows].join('\n');
     
-    // Create and trigger download
+    // Create and trigger download with tournament name
+    const tournamentName = upcomingTournament?.title.replace(/[^a-zA-Z0-9]/g, '_') || 'tournament';
+    const filename = `${tournamentName}_registrations_${new Date().toISOString().slice(0, 10)}.csv`;
+    
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `tournament_registrations_${Date.now()}.csv`);
+    link.setAttribute('download', filename);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
     
     toast({
       title: "Export successful",
-      description: "Tournament registrations have been exported to CSV.",
+      description: `${currentTournamentRegistrations.length} tournament registrations exported to CSV.`,
     });
   };
   
