@@ -75,7 +75,7 @@ const CoachDashboard = () => {
   const [announcementText, setAnnouncementText] = useState('');
   const [announcementDuration, setAnnouncementDuration] = useState<'24hours' | '48hours' | 'manual'>('24hours');
   const [currentAnnouncement, setCurrentAnnouncement] = useState<Announcement | null>(null);
-  const [upcomingTournament, setUpcomingTournament] = useState<Tournament | null>(null);
+  const [allTournaments, setAllTournaments] = useState<Tournament[]>([]);
   const [pastTournaments, setPastTournaments] = useState<Tournament[]>([]);
   const [showConfirmCancel, setShowConfirmCancel] = useState(false);
   const [tournamentToCancel, setTournamentToCancel] = useState<number | null>(null);
@@ -107,13 +107,13 @@ const CoachDashboard = () => {
   
   // Load tournaments and announcements on component mount
   useEffect(() => {
-    // Load upcoming tournament
-    const storedUpcoming = localStorage.getItem('upcomingTournament');
-    if (storedUpcoming) {
-      setUpcomingTournament(JSON.parse(storedUpcoming));
+    // Load all tournaments
+    const storedTournaments = localStorage.getItem('all_tournaments');
+    if (storedTournaments) {
+      setAllTournaments(JSON.parse(storedTournaments));
     }
     
-    // Load past tournaments
+    // Load past tournaments (legacy support)
     const storedPast = localStorage.getItem('pastTournaments');
     if (storedPast) {
       setPastTournaments(JSON.parse(storedPast));
@@ -357,9 +357,13 @@ const CoachDashboard = () => {
       status: 'upcoming'
     };
     
-    // Save as upcoming tournament
+    // Add to tournaments array
+    const updatedTournaments = [...allTournaments, newTournament];
+    localStorage.setItem('all_tournaments', JSON.stringify(updatedTournaments));
+    setAllTournaments(updatedTournaments);
+    
+    // Also maintain legacy storage for backward compatibility
     localStorage.setItem('upcomingTournament', JSON.stringify(newTournament));
-    setUpcomingTournament(newTournament);
     
     // Reset form
     setTournamentForm({
@@ -389,11 +393,14 @@ const CoachDashboard = () => {
   };
   
   const confirmCancelTournament = () => {
-    if (upcomingTournament && upcomingTournament.id === tournamentToCancel) {
+    const tournamentIndex = allTournaments.findIndex(t => t.id === tournamentToCancel);
+    if (tournamentIndex !== -1) {
       // Update tournament status to cancelled
-      const updatedTournament = { ...upcomingTournament, status: 'cancelled' as const };
-      localStorage.setItem('upcomingTournament', JSON.stringify(updatedTournament));
-      setUpcomingTournament(updatedTournament);
+      const updatedTournaments = [...allTournaments];
+      updatedTournaments[tournamentIndex] = { ...updatedTournaments[tournamentIndex], status: 'cancelled' as const };
+      
+      localStorage.setItem('all_tournaments', JSON.stringify(updatedTournaments));
+      setAllTournaments(updatedTournaments);
       
       // Trigger storage event to update other components
       window.dispatchEvent(new Event('storage'));
@@ -418,12 +425,18 @@ const CoachDashboard = () => {
       return;
     }
     
-    // Filter registrations for the current tournament
-    const currentTournamentRegistrations = registrations.filter(
-      reg => reg.tournamentId === upcomingTournament?.id
-    );
+    // Get all active tournaments registrations
+    const activeTournaments = allTournaments.filter(t => t.status === 'upcoming');
+    let allCurrentRegistrations: any[] = [];
     
-    if (currentTournamentRegistrations.length === 0) {
+    activeTournaments.forEach(tournament => {
+      const tournamentRegistrations = registrations.filter(
+        reg => reg.tournamentId === tournament.id
+      );
+      allCurrentRegistrations = [...allCurrentRegistrations, ...tournamentRegistrations];
+    });
+    
+    if (allCurrentRegistrations.length === 0) {
       toast({
         title: "No data to export",
         description: "There are no registrations for this tournament yet.",
@@ -468,14 +481,14 @@ const CoachDashboard = () => {
     };
     
     const headers = orderedHeaders.join(',');
-    const rows = currentTournamentRegistrations.map(reg => 
+    const rows = allCurrentRegistrations.map(reg => 
       orderedHeaders.map(header => escapeCSVField(reg[header] || '')).join(',')
     );
     
     const csvContent = [headers, ...rows].join('\n');
     
-    // Create and trigger download with tournament name
-    const tournamentName = upcomingTournament?.title.replace(/[^a-zA-Z0-9]/g, '_') || 'tournament';
+    // Create and trigger download with timestamp
+    const tournamentName = 'all_tournaments';
     const filename = `${tournamentName}_registrations_${new Date().toISOString().slice(0, 10)}.csv`;
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -491,7 +504,7 @@ const CoachDashboard = () => {
     
     toast({
       title: "Export successful",
-      description: `${currentTournamentRegistrations.length} tournament registrations exported to CSV.`,
+      description: `${allCurrentRegistrations.length} tournament registrations exported to CSV.`,
     });
   };
   
@@ -853,49 +866,47 @@ const CoachDashboard = () => {
           
           {/* Tournaments Tab */}
           <TabsContent value="tournaments" className="space-y-8">
-            {/* Current Tournament Status */}
-            {upcomingTournament && (
+            {/* Current Tournaments Status */}
+            {allTournaments.filter(t => t.status === 'upcoming').length > 0 && (
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-gray-900/40 backdrop-blur-lg rounded-xl border border-gray-800/50 p-6 shadow-2xl mb-8"
               >
-                <h2 className="text-xl font-bold mb-6 text-baseline-yellow">Current Tournament</h2>
+                <h2 className="text-xl font-bold mb-6 text-baseline-yellow">Active Tournaments ({allTournaments.filter(t => t.status === 'upcoming').length})</h2>
                 
-                <div className="bg-black/30 border border-gray-800/50 rounded-lg p-6">
-                  <div className="flex flex-col lg:flex-row justify-between">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold mb-2">{upcomingTournament.title}</h3>
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        <span className="bg-gray-800/50 px-3 py-1 rounded-full text-xs backdrop-blur-sm">
-                          {upcomingTournament.date}
-                        </span>
-                        <span className="bg-gray-800/50 px-3 py-1 rounded-full text-xs backdrop-blur-sm">
-                          {upcomingTournament.matchType}
-                        </span>
-                        <span className={`px-3 py-1 rounded-full text-xs backdrop-blur-sm ${
-                          upcomingTournament.status === 'cancelled' 
-                            ? 'bg-red-900/30 text-red-200 border border-red-800/50' 
-                            : 'bg-green-900/30 text-green-200 border border-green-800/50'
-                        }`}>
-                          {upcomingTournament.status === 'cancelled' ? 'Cancelled' : 'Active'}
-                        </span>
+                <div className="space-y-4">
+                  {allTournaments.filter(t => t.status === 'upcoming').map(tournament => (
+                    <div key={tournament.id} className="bg-black/30 border border-gray-800/50 rounded-lg p-6">
+                      <div className="flex flex-col lg:flex-row justify-between">
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold mb-2">{tournament.title}</h3>
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            <span className="bg-gray-800/50 px-3 py-1 rounded-full text-xs backdrop-blur-sm">
+                              {tournament.date}
+                            </span>
+                            <span className="bg-gray-800/50 px-3 py-1 rounded-full text-xs backdrop-blur-sm">
+                              {tournament.matchType}
+                            </span>
+                            <span className="bg-green-900/30 text-green-200 border border-green-800/50 px-3 py-1 rounded-full text-xs backdrop-blur-sm">
+                              Active
+                            </span>
+                          </div>
+                          <p className="text-gray-300 mb-4">{tournament.description}</p>
+                        </div>
+                        
+                        <div className="mt-4 lg:mt-0 flex gap-2">
+                          <Button 
+                            variant="destructive"
+                            onClick={() => handleCancelTournament(tournament.id)}
+                            className="flex items-center bg-red-600 hover:bg-red-700"
+                          >
+                            <Trash2 size={16} className="mr-2" /> Cancel
+                          </Button>
+                        </div>
                       </div>
-                      <p className="text-gray-300 mb-4">{upcomingTournament.description}</p>
                     </div>
-                    
-                    <div className="mt-4 lg:mt-0">
-                      {upcomingTournament.status !== 'cancelled' && (
-                        <Button 
-                          variant="destructive"
-                          onClick={() => handleCancelTournament(upcomingTournament.id)}
-                          className="flex items-center bg-red-600 hover:bg-red-700"
-                        >
-                          <Trash2 size={16} className="mr-2" /> Cancel Tournament
-                        </Button>
-                      )}
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </motion.div>
             )}
@@ -1079,73 +1090,82 @@ const CoachDashboard = () => {
             >
               <h2 className="text-xl font-bold mb-6 text-baseline-yellow">Tournament Registrations</h2>
               
-              {/* Registrations for upcoming tournament */}
-              {upcomingTournament && (
-                <div className="mb-8 p-6 border border-gray-700/50 rounded-lg bg-gray-800/20 backdrop-blur-sm">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
-                    <h3 className="text-lg font-semibold mb-2 sm:mb-0">{upcomingTournament.title}</h3>
-                    <span className={`px-3 py-1 rounded-full text-xs backdrop-blur-sm ${
-                      upcomingTournament.status === 'cancelled' 
-                        ? 'bg-red-900/50 text-red-300 border border-red-800/50' 
-                        : 'bg-green-900/50 text-green-300 border border-green-800/50'
-                    }`}>
-                      {upcomingTournament.status === 'cancelled' ? 'Cancelled' : 'Registration Open'}
-                    </span>
-                  </div>
+              {/* Registrations for all tournaments */}
+              {allTournaments.length > 0 && (
+                <div className="space-y-6">
+                  {allTournaments.map(tournament => {
+                    const tournamentRegistrations = registrations.filter(reg => reg.tournamentId === tournament.id);
+                    return (
+                      <div key={tournament.id} className="mb-8 p-6 border border-gray-700/50 rounded-lg bg-gray-800/20 backdrop-blur-sm">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+                          <h3 className="text-lg font-semibold mb-2 sm:mb-0">{tournament.title}</h3>
+                          <span className={`px-3 py-1 rounded-full text-xs backdrop-blur-sm ${
+                            tournament.status === 'cancelled' 
+                              ? 'bg-red-900/50 text-red-300 border border-red-800/50' 
+                              : 'bg-green-900/50 text-green-300 border border-green-800/50'
+                          }`}>
+                            {tournament.status === 'cancelled' ? 'Cancelled' : 'Registration Open'}
+                          </span>
+                        </div>
+                        
+                        <p className="text-sm text-gray-400 mb-4">Registration closes: {tournament.registrationClose}</p>
                   
-                  <p className="text-sm text-gray-400 mb-4">Registration closes: {upcomingTournament.registrationClose}</p>
-                  
-                  <div className="bg-gray-800/30 p-4 rounded-lg backdrop-blur-sm border border-gray-700/50">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
-                      <div>
-                        <h4 className="font-medium">Current Registrations</h4>
-                        <p className="text-sm text-gray-400">{registrations.length} teams registered</p>
+                        <div className="bg-gray-800/30 p-4 rounded-lg backdrop-blur-sm border border-gray-700/50">
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+                            <div>
+                              <h4 className="font-medium">Current Registrations</h4>
+                              <p className="text-sm text-gray-400">{tournamentRegistrations.length} teams registered</p>
+                            </div>
+                            
+                            <Button 
+                              className="mt-2 sm:mt-0 flex items-center bg-baseline-yellow text-black hover:bg-baseline-yellow/90"
+                              onClick={handleExportRegistrations}
+                              disabled={tournamentRegistrations.length === 0}
+                            >
+                              <Download size={16} className="mr-2" /> Export CSV
+                            </Button>
+                          </div>
+                          
+                          {tournamentRegistrations.length > 0 ? (
+                            <div className="overflow-x-auto rounded-lg border border-gray-700/50">
+                              <table className="w-full border-collapse bg-gray-900/30">
+                                <thead>
+                                  <tr className="bg-gray-800/50">
+                                    <th className="text-left py-3 px-4 font-medium">Team Name</th>
+                                    <th className="text-left py-3 px-4 font-medium">Contact</th>
+                                    <th className="text-left py-3 px-4 font-medium">Players</th>
+                                    <th className="text-center py-3 px-4 font-medium">Status</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {tournamentRegistrations.map((reg, index) => (
+                                    <tr key={index} className="border-t border-gray-700/30 hover:bg-gray-800/20 transition-colors">
+                                      <td className="py-3 px-4">{reg['Team Name'] || 'N/A'}</td>
+                                      <td className="py-3 px-4">
+                                        {reg['Captain First Name'] || 'N/A'} {reg['Captain Last Name'] || ''}
+                                        <br/>
+                                        <span className="text-xs text-gray-400">{reg['Email'] || 'N/A'}</span>
+                                      </td>
+                                      <td className="py-3 px-4">
+                                        {[2,3,4,5].filter(num => reg[`Player ${num} First Name`]).length + 1} players
+                                      </td>
+                                      <td className="py-3 px-4 text-center">
+                                        <span className="bg-green-900/50 text-green-300 px-2 py-1 rounded-full text-xs border border-green-800/50">
+                                          Registered
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          ) : (
+                            <p className="text-center text-gray-500 py-8">No registrations yet for this tournament</p>
+                          )}
+                        </div>
                       </div>
-                      
-                      <Button 
-                        className="mt-2 sm:mt-0 flex items-center bg-baseline-yellow text-black hover:bg-baseline-yellow/90"
-                        onClick={handleExportRegistrations}
-                        disabled={registrations.length === 0}
-                      >
-                        <Download size={16} className="mr-2" /> Export to CSV
-                      </Button>
-                    </div>
-                    
-                    {registrations.length > 0 ? (
-                      <div className="overflow-x-auto rounded-lg border border-gray-700/50">
-                        <table className="w-full border-collapse bg-gray-900/30">
-                          <thead>
-                            <tr className="bg-gray-800/50">
-                              <th className="text-left py-3 px-4 font-medium">Team Name</th>
-                              <th className="text-left py-3 px-4 font-medium">Contact</th>
-                              <th className="text-left py-3 px-4 font-medium">Age Group</th>
-                              <th className="text-left py-3 px-4 font-medium">Players</th>
-                              <th className="text-center py-3 px-4 font-medium">Payment</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr className="border-t border-gray-700/30 hover:bg-gray-800/20 transition-colors">
-                              <td className="py-3 px-4">{registrations[0]['Team Name'] || 'N/A'}</td>
-                              <td className="py-3 px-4">
-                                {registrations[0]['Contact Name'] || 'N/A'}
-                                <br/>
-                                <span className="text-xs text-gray-400">{registrations[0]['Email'] || 'N/A'}</span>
-                              </td>
-                              <td className="py-3 px-4">{registrations[0]['Age Group'] || 'N/A'}</td>
-                              <td className="py-3 px-4">{registrations[0]['player_1_name'] ? '1+' : 'N/A'}</td>
-                              <td className="py-3 px-4 text-center">
-                                <span className="bg-yellow-900/50 text-yellow-300 px-2 py-1 rounded-full text-xs border border-yellow-800/50">
-                                  Pending
-                                </span>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <p className="text-center text-gray-500 py-8">No registrations yet</p>
-                    )}
-                  </div>
+                    );
+                  })}
                 </div>
               )}
               
