@@ -83,6 +83,7 @@ const CoachDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const [playerToRemove, setPlayerToRemove] = useState<Player | null>(null);
+  const [hiddenFromExport, setHiddenFromExport] = useState<Set<number>>(new Set());
   
   // Tournament Form State
   const [tournamentForm, setTournamentForm] = useState({
@@ -387,6 +388,14 @@ const CoachDashboard = () => {
     });
   };
   
+  const handleRemoveFromExport = (tournamentId: number) => {
+    setHiddenFromExport(prev => new Set([...prev, tournamentId]));
+    toast({
+      title: "Removed from export view",
+      description: "This tournament has been hidden from the registrations export section.",
+    });
+  };
+
   const handleCancelTournament = (tournamentId: number) => {
     setTournamentToCancel(tournamentId);
     setShowConfirmCancel(true);
@@ -1081,7 +1090,7 @@ const CoachDashboard = () => {
               {/* Registrations for all tournaments */}
               {allTournaments.length > 0 && (
                 <div className="space-y-6">
-                  {allTournaments.map(tournament => {
+                  {allTournaments.filter(tournament => !hiddenFromExport.has(tournament.id)).map(tournament => {
                     const tournamentRegistrations = registrations.filter(reg => reg.tournamentId === tournament.id);
                     return (
                       <div key={tournament.id} className="mb-8 p-6 border border-gray-700/50 rounded-lg bg-gray-800/20 backdrop-blur-sm">
@@ -1116,10 +1125,10 @@ const CoachDashboard = () => {
                               <Button 
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleCancelTournament(tournament.id)}
+                                onClick={() => handleRemoveFromExport(tournament.id)}
                                 className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
                               >
-                                <X size={16} className="mr-2" /> Cancel Tournament
+                                <X size={16} className="mr-2" /> Remove from Export
                               </Button>
                             </div>
                           </div>
