@@ -415,8 +415,13 @@ const CoachDashboard = () => {
     setTournamentToCancel(null);
   };
   
-  const handleExportRegistrations = () => {
-    if (registrations.length === 0) {
+  const handleExportRegistrations = (tournamentId: number) => {
+    // Get registrations for specific tournament only
+    const tournamentRegistrations = registrations.filter(
+      reg => reg.tournamentId === tournamentId
+    );
+    
+    if (tournamentRegistrations.length === 0) {
       toast({
         title: "No data to export",
         description: "There are no registrations for this tournament yet.",
@@ -425,25 +430,9 @@ const CoachDashboard = () => {
       return;
     }
     
-    // Get all active tournaments registrations
-    const activeTournaments = allTournaments.filter(t => t.status === 'upcoming');
-    let allCurrentRegistrations: any[] = [];
-    
-    activeTournaments.forEach(tournament => {
-      const tournamentRegistrations = registrations.filter(
-        reg => reg.tournamentId === tournament.id
-      );
-      allCurrentRegistrations = [...allCurrentRegistrations, ...tournamentRegistrations];
-    });
-    
-    if (allCurrentRegistrations.length === 0) {
-      toast({
-        title: "No data to export",
-        description: "There are no registrations for this tournament yet.",
-        variant: "destructive"
-      });
-      return;
-    }
+    // Find tournament for naming
+    const tournament = allTournaments.find(t => t.id === tournamentId);
+    const tournamentName = tournament ? tournament.title.replace(/[^a-zA-Z0-9]/g, '_') : 'tournament';
     
     // Define ordered headers for better CSV structure
     const orderedHeaders = [
@@ -481,14 +470,13 @@ const CoachDashboard = () => {
     };
     
     const headers = orderedHeaders.join(',');
-    const rows = allCurrentRegistrations.map(reg => 
+    const rows = tournamentRegistrations.map(reg => 
       orderedHeaders.map(header => escapeCSVField(reg[header] || '')).join(',')
     );
     
     const csvContent = [headers, ...rows].join('\n');
     
     // Create and trigger download with timestamp
-    const tournamentName = 'all_tournaments';
     const filename = `${tournamentName}_registrations_${new Date().toISOString().slice(0, 10)}.csv`;
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -504,7 +492,7 @@ const CoachDashboard = () => {
     
     toast({
       title: "Export successful",
-      description: `${allCurrentRegistrations.length} tournament registrations exported to CSV.`,
+      description: `${tournamentRegistrations.length} registrations exported for ${tournament?.title}.`,
     });
   };
   
@@ -1117,13 +1105,23 @@ const CoachDashboard = () => {
                               <p className="text-sm text-gray-400">{tournamentRegistrations.length} teams registered</p>
                             </div>
                             
-                            <Button 
-                              className="mt-2 sm:mt-0 flex items-center bg-baseline-yellow text-black hover:bg-baseline-yellow/90"
-                              onClick={handleExportRegistrations}
-                              disabled={tournamentRegistrations.length === 0}
-                            >
-                              <Download size={16} className="mr-2" /> Export CSV
-                            </Button>
+                            <div className="flex flex-col sm:flex-row gap-2">
+                              <Button 
+                                className="flex items-center bg-baseline-yellow text-black hover:bg-baseline-yellow/90"
+                                onClick={() => handleExportRegistrations(tournament.id)}
+                                disabled={tournamentRegistrations.length === 0}
+                              >
+                                <Download size={16} className="mr-2" /> Export CSV
+                              </Button>
+                              <Button 
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleCancelTournament(tournament.id)}
+                                className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
+                              >
+                                <X size={16} className="mr-2" /> Cancel Tournament
+                              </Button>
+                            </div>
                           </div>
                           
                           {tournamentRegistrations.length > 0 ? (
