@@ -60,8 +60,16 @@ const TournamentRegistrationForm = ({
         const registrationData = {
           ...formData,
           tournamentId: tournament.id,
+          tournamentTitle: tournament.title,
           registrationDate: new Date().toISOString()
         };
+        
+        // Debug log to ensure proper tournament ID
+        console.log('Registering for tournament:', {
+          tournamentId: tournament.id,
+          tournamentTitle: tournament.title,
+          registrationData
+        });
         
         // Get existing registrations or initialize empty array
         const existingRegistrations = JSON.parse(

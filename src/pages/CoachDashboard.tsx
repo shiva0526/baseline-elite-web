@@ -425,10 +425,17 @@ const CoachDashboard = () => {
   };
   
   const handleExportRegistrations = (tournamentId: number) => {
+    // Debug log to check registration filtering
+    console.log('Exporting registrations for tournament:', tournamentId);
+    console.log('All registrations:', registrations);
+    console.log('Registrations with tournamentId:', registrations.map(r => ({ id: r.tournamentId, title: r.tournamentTitle })));
+    
     // Get registrations for specific tournament only
     const tournamentRegistrations = registrations.filter(
       reg => reg.tournamentId === tournamentId
     );
+    
+    console.log('Filtered registrations:', tournamentRegistrations);
     
     if (tournamentRegistrations.length === 0) {
       toast({
