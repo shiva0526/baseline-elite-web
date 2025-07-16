@@ -83,7 +83,6 @@ const CoachDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const [playerToRemove, setPlayerToRemove] = useState<Player | null>(null);
-  const [hiddenFromExport, setHiddenFromExport] = useState<Set<number>>(new Set());
   
   // Tournament Form State
   const [tournamentForm, setTournamentForm] = useState({
@@ -388,14 +387,6 @@ const CoachDashboard = () => {
     });
   };
   
-  const handleRemoveFromExport = (tournamentId: number) => {
-    setHiddenFromExport(prev => new Set([...prev, tournamentId]));
-    toast({
-      title: "Removed from export view",
-      description: "This tournament has been hidden from the registrations export section.",
-    });
-  };
-
   const handleCancelTournament = (tournamentId: number) => {
     setTournamentToCancel(tournamentId);
     setShowConfirmCancel(true);
@@ -425,22 +416,10 @@ const CoachDashboard = () => {
   };
   
   const handleExportRegistrations = (tournamentId: number) => {
-    // Debug log to check registration filtering
-    console.log('Exporting registrations for tournament:', tournamentId);
-    console.log('All registrations:', registrations);
-    console.log('Tournament ID type:', typeof tournamentId);
-    console.log('Registration IDs and types:', registrations.map(r => ({ 
-      id: r.tournamentId, 
-      type: typeof r.tournamentId, 
-      title: r.tournamentTitle 
-    })));
-    
-    // Get registrations for specific tournament only - ensure both are same type
+    // Get registrations for specific tournament only
     const tournamentRegistrations = registrations.filter(
-      reg => Number(reg.tournamentId) === Number(tournamentId)
+      reg => reg.tournamentId === tournamentId
     );
-    
-    console.log('Filtered registrations:', tournamentRegistrations);
     
     if (tournamentRegistrations.length === 0) {
       toast({
@@ -1099,6 +1078,94 @@ const CoachDashboard = () => {
             >
               <h2 className="text-xl font-bold mb-6 text-baseline-yellow">Tournament Registrations</h2>
               
+              {/* Registrations for all tournaments */}
+              {allTournaments.length > 0 && (
+                <div className="space-y-6">
+                  {allTournaments.map(tournament => {
+                    const tournamentRegistrations = registrations.filter(reg => reg.tournamentId === tournament.id);
+                    return (
+                      <div key={tournament.id} className="mb-8 p-6 border border-gray-700/50 rounded-lg bg-gray-800/20 backdrop-blur-sm">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+                          <h3 className="text-lg font-semibold mb-2 sm:mb-0">{tournament.title}</h3>
+                          <span className={`px-3 py-1 rounded-full text-xs backdrop-blur-sm ${
+                            tournament.status === 'cancelled' 
+                              ? 'bg-red-900/50 text-red-300 border border-red-800/50' 
+                              : 'bg-green-900/50 text-green-300 border border-green-800/50'
+                          }`}>
+                            {tournament.status === 'cancelled' ? 'Cancelled' : 'Registration Open'}
+                          </span>
+                        </div>
+                        
+                        <p className="text-sm text-gray-400 mb-4">Registration closes: {tournament.registrationClose}</p>
+                  
+                        <div className="bg-gray-800/30 p-4 rounded-lg backdrop-blur-sm border border-gray-700/50">
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+                            <div>
+                              <h4 className="font-medium">Current Registrations</h4>
+                              <p className="text-sm text-gray-400">{tournamentRegistrations.length} teams registered</p>
+                            </div>
+                            
+                            <div className="flex flex-col sm:flex-row gap-2">
+                              <Button 
+                                className="flex items-center bg-baseline-yellow text-black hover:bg-baseline-yellow/90"
+                                onClick={() => handleExportRegistrations(tournament.id)}
+                                disabled={tournamentRegistrations.length === 0}
+                              >
+                                <Download size={16} className="mr-2" /> Export CSV
+                              </Button>
+                              <Button 
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleCancelTournament(tournament.id)}
+                                className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
+                              >
+                                <X size={16} className="mr-2" /> Cancel Tournament
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          {tournamentRegistrations.length > 0 ? (
+                            <div className="overflow-x-auto rounded-lg border border-gray-700/50">
+                              <table className="w-full border-collapse bg-gray-900/30">
+                                <thead>
+                                  <tr className="bg-gray-800/50">
+                                    <th className="text-left py-3 px-4 font-medium">Team Name</th>
+                                    <th className="text-left py-3 px-4 font-medium">Contact</th>
+                                    <th className="text-left py-3 px-4 font-medium">Players</th>
+                                    <th className="text-center py-3 px-4 font-medium">Status</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {tournamentRegistrations.map((reg, index) => (
+                                    <tr key={index} className="border-t border-gray-700/30 hover:bg-gray-800/20 transition-colors">
+                                      <td className="py-3 px-4">{reg['Team Name'] || 'N/A'}</td>
+                                      <td className="py-3 px-4">
+                                        {reg['Captain First Name'] || 'N/A'} {reg['Captain Last Name'] || ''}
+                                        <br/>
+                                        <span className="text-xs text-gray-400">{reg['Email'] || 'N/A'}</span>
+                                      </td>
+                                      <td className="py-3 px-4">
+                                        {[2,3,4,5].filter(num => reg[`Player ${num} First Name`]).length + 1} players
+                                      </td>
+                                      <td className="py-3 px-4 text-center">
+                                        <span className="bg-green-900/50 text-green-300 px-2 py-1 rounded-full text-xs border border-green-800/50">
+                                          Registered
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          ) : (
+                            <p className="text-center text-gray-500 py-8">No registrations yet for this tournament</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
               
               {/* Past tournament */}
               {pastTournaments.length > 0 && (
