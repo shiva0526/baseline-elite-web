@@ -428,11 +428,16 @@ const CoachDashboard = () => {
     // Debug log to check registration filtering
     console.log('Exporting registrations for tournament:', tournamentId);
     console.log('All registrations:', registrations);
-    console.log('Registrations with tournamentId:', registrations.map(r => ({ id: r.tournamentId, title: r.tournamentTitle })));
+    console.log('Tournament ID type:', typeof tournamentId);
+    console.log('Registration IDs and types:', registrations.map(r => ({ 
+      id: r.tournamentId, 
+      type: typeof r.tournamentId, 
+      title: r.tournamentTitle 
+    })));
     
-    // Get registrations for specific tournament only
+    // Get registrations for specific tournament only - ensure both are same type
     const tournamentRegistrations = registrations.filter(
-      reg => reg.tournamentId === tournamentId
+      reg => Number(reg.tournamentId) === Number(tournamentId)
     );
     
     console.log('Filtered registrations:', tournamentRegistrations);
