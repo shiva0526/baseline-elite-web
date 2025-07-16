@@ -393,21 +393,28 @@ const CoachDashboard = () => {
   };
   
   const confirmCancelTournament = () => {
-    const tournamentIndex = allTournaments.findIndex(t => t.id === tournamentToCancel);
-    if (tournamentIndex !== -1) {
-      // Update tournament status to cancelled
-      const updatedTournaments = [...allTournaments];
-      updatedTournaments[tournamentIndex] = { ...updatedTournaments[tournamentIndex], status: 'cancelled' as const };
+    if (tournamentToCancel) {
+      // Remove tournament completely from the list
+      const updatedTournaments = allTournaments.filter(t => t.id !== tournamentToCancel);
       
       localStorage.setItem('all_tournaments', JSON.stringify(updatedTournaments));
       setAllTournaments(updatedTournaments);
+      
+      // Also remove from legacy storage if it matches
+      const legacyTournament = localStorage.getItem('upcomingTournament');
+      if (legacyTournament) {
+        const parsed = JSON.parse(legacyTournament);
+        if (parsed.id === tournamentToCancel) {
+          localStorage.removeItem('upcomingTournament');
+        }
+      }
       
       // Trigger storage event to update other components
       window.dispatchEvent(new Event('storage'));
       
       toast({
-        title: "Tournament cancelled",
-        description: "The tournament has been cancelled and removed from the public view.",
+        title: "Tournament removed",
+        description: "The tournament has been removed from the coach's dashboard.",
       });
     }
     
