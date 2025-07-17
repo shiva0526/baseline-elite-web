@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Users, Award, User, FileSpreadsheet, Bell, LogOut, Plus, Download, Trash2, X, Check, Menu, Clock, CheckCircle } from 'lucide-react';
+import { Calendar, Users, Award, User, FileSpreadsheet, Bell, LogOut, Plus, Download, Trash2, X, Check, Menu, Clock, CheckCircle, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from "@/components/ui/use-toast";
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -26,32 +27,44 @@ const initialPlayers: Player[] = [{
   id: 1,
   name: 'Michael Jordan',
   program: '5-Day',
-  attendedClasses: 15
+  attendedClasses: 15,
+  phone: '+1 (555) 123-4567',
+  avatar: null
 }, {
   id: 2,
   name: 'LeBron James',
   program: '3-Day',
-  attendedClasses: 8
+  attendedClasses: 8,
+  phone: '+1 (555) 234-5678',
+  avatar: null
 }, {
   id: 3,
   name: 'Kevin Durant',
   program: '5-Day',
-  attendedClasses: 12
+  attendedClasses: 12,
+  phone: '+1 (555) 345-6789',
+  avatar: null
 }, {
   id: 4,
   name: 'Stephen Curry',
   program: '3-Day',
-  attendedClasses: 7
+  attendedClasses: 7,
+  phone: '+1 (555) 456-7890',
+  avatar: null
 }, {
   id: 5,
   name: 'Giannis Antetokounmpo',
   program: '5-Day',
-  attendedClasses: 14
+  attendedClasses: 14,
+  phone: '+1 (555) 567-8901',
+  avatar: null
 }, {
   id: 6,
   name: 'Joel Embiid',
   program: '3-Day',
-  attendedClasses: 9
+  attendedClasses: 9,
+  phone: '+1 (555) 678-9012',
+  avatar: null
 }];
 
 // Days of the week for attendance
@@ -62,6 +75,8 @@ interface Player {
   name: string;
   program: Program;
   attendedClasses: number;
+  phone: string;
+  avatar: string | null;
 }
 interface Announcement {
   id: number;
@@ -91,6 +106,11 @@ const CoachDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const [playerToRemove, setPlayerToRemove] = useState<Player | null>(null);
+  
+  // New attendance state
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   // Tournament Form State
   const [tournamentForm, setTournamentForm] = useState({
@@ -105,11 +125,11 @@ const CoachDashboard = () => {
     requiredFields: [] as string[]
   });
 
-  // Attendance tracking
-  const [attendance, setAttendance] = useState<Record<number, string[]>>(initialPlayers.reduce((acc, player) => {
-    acc[player.id] = [];
-    return acc;
-  }, {} as Record<number, string[]>));
+  // Attendance tracking - now date-based
+  const [attendance, setAttendance] = useState<Record<string, Record<number, boolean>>>(() => {
+    const stored = localStorage.getItem('attendance_data');
+    return stored ? JSON.parse(stored) : {};
+  });
 
   // Load tournaments and announcements on component mount
   useEffect(() => {
@@ -175,34 +195,72 @@ const CoachDashboard = () => {
 
     return () => clearInterval(interval);
   }, [currentAnnouncement]);
-  const handleAttendanceChange = (playerId: number, day: string) => {
-    setAttendance(prev => {
-      const playerAttendance = [...(prev[playerId] || [])];
-      const dayIndex = playerAttendance.indexOf(day);
-      if (dayIndex === -1) {
-        playerAttendance.push(day);
-      } else {
-        playerAttendance.splice(dayIndex, 1);
-      }
-      return {
-        ...prev,
-        [playerId]: playerAttendance
-      };
-    });
+  // Generate calendar dates for current month
+  const getCalendarDates = () => {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const dates = [];
+    
+    for (let i = 1; i <= daysInMonth; i++) {
+      const date = new Date(year, month, i);
+      dates.push({
+        date: i,
+        fullDate: date.toISOString().split('T')[0],
+        dayName: date.toLocaleDateString('en-US', { weekday: 'short' })
+      });
+    }
+    return dates;
+  };
 
-    // Update player's attended classes
-    setPlayers(prev => prev.map(player => {
-      if (player.id === playerId) {
-        const updatedAttendance = attendance[playerId] || [];
-        const isDayPresent = updatedAttendance.includes(day);
-        const attendanceChange = isDayPresent ? 0 : 1;
-        return {
-          ...player,
-          attendedClasses: player.attendedClasses + attendanceChange
-        };
+  const calendarDates = getCalendarDates();
+
+  // Handle attendance toggle
+  const handleAttendanceToggle = (playerId: number, checked: boolean) => {
+    setAttendance(prev => ({
+      ...prev,
+      [selectedDate]: {
+        ...prev[selectedDate],
+        [playerId]: checked
       }
-      return player;
     }));
+  };
+
+  // Update attendance and save to localStorage
+  const handleUpdateAttendance = () => {
+    const attendanceData = attendance;
+    localStorage.setItem('attendance_data', JSON.stringify(attendanceData));
+    
+    // Update total attendance count for each player
+    const updatedPlayers = players.map(player => {
+      let totalAttendance = 0;
+      Object.values(attendanceData).forEach(dayData => {
+        if (dayData[player.id]) totalAttendance++;
+      });
+      return { ...player, attendedClasses: totalAttendance };
+    });
+    
+    setPlayers(updatedPlayers);
+    
+    toast({
+      title: "Attendance Updated",
+      description: `Attendance for ${selectedDate} has been saved successfully.`
+    });
+  };
+
+  // Filter players based on search
+  const filteredPlayers = players.filter(player => 
+    player.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    player.phone.includes(searchQuery)
+  );
+
+  // Navigation functions
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    setCurrentMonth(prev => {
+      const newMonth = new Date(prev);
+      newMonth.setMonth(prev.getMonth() + (direction === 'next' ? 1 : -1));
+      return newMonth;
+    });
   };
   const handleAddPlayer = () => {
     if (!newPlayer.name) return;
@@ -211,12 +269,10 @@ const CoachDashboard = () => {
       id: newPlayerId,
       name: newPlayer.name,
       program: newPlayer.program,
-      attendedClasses: 0
+      attendedClasses: 0,
+      phone: '+1 (555) 000-0000',
+      avatar: null
     }]);
-    setAttendance(prev => ({
-      ...prev,
-      [newPlayerId]: []
-    }));
     setNewPlayer({
       name: '',
       program: '3-Day'
@@ -563,101 +619,145 @@ const CoachDashboard = () => {
           </motion.div>
           
           {/* Attendance Tab */}
-          <TabsContent value="attendance" className="space-y-8">
-            <motion.div initial={{
-            opacity: 0,
-            y: 20
-          }} animate={{
-            opacity: 1,
-            y: 0
-          }} className="bg-gray-900/40 backdrop-blur-lg rounded-xl border border-gray-800/50 p-6 shadow-2xl">
-              <h2 className="text-2xl font-bold mb-6 text-baseline-yellow">Weekly Attendance Tracker</h2>
-              
-              {/* 3-Day Program */}
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold mb-4 text-baseline-yellow flex items-center">
-                  <div className="w-3 h-3 bg-baseline-yellow rounded-full mr-2"></div>
-                  3-Day Program
-                </h3>
-                
-                <div className="overflow-x-auto rounded-lg border border-gray-800/50">
-                  <table className="w-full border-collapse bg-gray-900/30">
-                    <thead>
-                      <tr>
-                        <th className="text-left py-3 px-4 bg-gray-800/50 font-medium">Player Name</th>
-                        {weekdays.map(day => <th key={day} className="py-3 px-4 bg-gray-800/50 text-center font-medium text-sm">{day}</th>)}
-                        <th className="py-3 px-4 bg-gray-800/50 text-center font-medium">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {threeDayPlayers.length > 0 ? threeDayPlayers.map(player => <motion.tr key={player.id} initial={{
-                      opacity: 0
-                    }} animate={{
-                      opacity: 1
-                    }} className="border-t border-gray-800/30 hover:bg-gray-800/20 transition-colors">
-                            <td className="py-3 px-4 font-medium">{player.name}</td>
-                            {weekdays.map(day => <td key={`${player.id}-${day}`} className="py-3 px-4 text-center">
-                                <input type="checkbox" checked={attendance[player.id]?.includes(day) || false} onChange={() => handleAttendanceChange(player.id, day)} className="h-5 w-5 rounded accent-baseline-yellow cursor-pointer transition-transform hover:scale-110" />
-                              </td>)}
-                            <td className="py-3 px-4 text-center font-bold text-baseline-yellow">
-                              {attendance[player.id]?.length || 0}
-                            </td>
-                          </motion.tr>) : <tr>
-                          <td colSpan={7} className="py-8 text-center text-gray-400">
-                            No players in the 3-Day Program
-                          </td>
-                        </tr>}
-                    </tbody>
-                  </table>
+          <TabsContent value="attendance" className="space-y-6">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              className="bg-gradient-to-br from-gray-900/80 via-gray-900/60 to-gray-800/80 backdrop-blur-lg rounded-xl border border-gray-700/50 shadow-2xl overflow-hidden"
+            >
+              {/* Header */}
+              <div className="bg-gradient-to-r from-primary to-primary/80 px-6 py-4">
+                <h2 className="text-xl font-bold text-white">Attendance</h2>
+              </div>
+
+              {/* Calendar Navigation */}
+              <div className="p-6 pb-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => navigateMonth('prev')}
+                      className="text-white hover:bg-gray-800"
+                    >
+                      <ChevronLeft size={16} />
+                    </Button>
+                    <h3 className="text-lg font-semibold text-white">
+                      {currentMonth.toLocaleDateString('en-US', { 
+                        month: 'long', 
+                        year: 'numeric' 
+                      })}
+                    </h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => navigateMonth('next')}
+                      className="text-white hover:bg-gray-800"
+                    >
+                      <ChevronRight size={16} />
+                    </Button>
+                  </div>
+                  <div className="p-2 bg-gray-800/30 rounded-lg">
+                    <Calendar size={20} className="text-primary" />
+                  </div>
+                </div>
+
+                {/* Calendar Dates */}
+                <div className="overflow-x-auto pb-2">
+                  <div className="flex gap-2 min-w-max">
+                    {calendarDates.map((dateObj) => (
+                      <Button
+                        key={dateObj.fullDate}
+                        variant={selectedDate === dateObj.fullDate ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setSelectedDate(dateObj.fullDate)}
+                        className={`flex-shrink-0 flex flex-col items-center gap-1 h-auto py-2 px-3 min-w-[50px] ${
+                          selectedDate === dateObj.fullDate
+                            ? 'bg-primary text-white border-primary'
+                            : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                        }`}
+                      >
+                        <span className="text-xs font-medium">{dateObj.dayName}</span>
+                        <span className="text-lg font-bold">{dateObj.date}</span>
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               </div>
-              
-              {/* 5-Day Program */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4 text-baseline-yellow flex items-center">
-                  <div className="w-3 h-3 bg-baseline-yellow rounded-full mr-2"></div>
-                  5-Day Program
-                </h3>
-                
-                <div className="overflow-x-auto rounded-lg border border-gray-800/50">
-                  <table className="w-full border-collapse bg-gray-900/30">
-                    <thead>
-                      <tr>
-                        <th className="text-left py-3 px-4 bg-gray-800/50 font-medium">Player Name</th>
-                        {weekdays.map(day => <th key={day} className="py-3 px-4 bg-gray-800/50 text-center font-medium text-sm">{day}</th>)}
-                        <th className="py-3 px-4 bg-gray-800/50 text-center font-medium">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {fiveDayPlayers.length > 0 ? fiveDayPlayers.map(player => <motion.tr key={player.id} initial={{
-                      opacity: 0
-                    }} animate={{
-                      opacity: 1
-                    }} className="border-t border-gray-800/30 hover:bg-gray-800/20 transition-colors">
-                            <td className="py-3 px-4 font-medium">{player.name}</td>
-                            {weekdays.map(day => <td key={`${player.id}-${day}`} className="py-3 px-4 text-center">
-                                <input type="checkbox" checked={attendance[player.id]?.includes(day) || false} onChange={() => handleAttendanceChange(player.id, day)} className="h-5 w-5 rounded accent-baseline-yellow cursor-pointer transition-transform hover:scale-110" />
-                              </td>)}
-                            <td className="py-3 px-4 text-center font-bold text-baseline-yellow">
-                              {attendance[player.id]?.length || 0}
-                            </td>
-                          </motion.tr>) : <tr>
-                          <td colSpan={7} className="py-8 text-center text-gray-400">
-                            No players in the 5-Day Program
-                          </td>
-                        </tr>}
-                    </tbody>
-                  </table>
+
+              {/* Search */}
+              <div className="px-6 pb-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                  <input
+                    type="text"
+                    placeholder="Search By Name, Phone Number"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                  />
                 </div>
               </div>
-              
-              <div className="mt-8 flex flex-col sm:flex-row gap-4">
-                <Button className="bg-baseline-yellow text-black hover:bg-baseline-yellow/90 transition-all duration-200">
-                  Save Attendance
-                </Button>
-                
-                <Button variant="outline" className="border-gray-600 hover:bg-gray-800">
-                  Reset Weekly Attendance
+
+              {/* Players List */}
+              <div className="px-6 pb-6">
+                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                  {filteredPlayers.length > 0 ? (
+                    filteredPlayers.map((player) => (
+                      <motion.div
+                        key={player.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-gray-800/30 border border-gray-700/50 rounded-lg p-4 hover:bg-gray-800/50 transition-all duration-200"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            {/* Avatar */}
+                            <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center overflow-hidden">
+                              {player.avatar ? (
+                                <img 
+                                  src={player.avatar} 
+                                  alt={player.name} 
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <User size={24} className="text-gray-400" />
+                              )}
+                            </div>
+                            
+                            {/* Player Info */}
+                            <div>
+                              <h3 className="font-semibold text-white">{player.name}</h3>
+                              <p className="text-sm text-gray-400">
+                                Attendance: {player.attendedClasses}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {/* Toggle Switch */}
+                          <Switch
+                            checked={attendance[selectedDate]?.[player.id] || false}
+                            onCheckedChange={(checked) => handleAttendanceToggle(player.id, checked)}
+                          />
+                        </div>
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="text-center py-12">
+                      <Users size={48} className="mx-auto mb-4 text-gray-500" />
+                      <p className="text-gray-400">No players found</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Update Button */}
+              <div className="px-6 pb-6">
+                <Button 
+                  onClick={handleUpdateAttendance}
+                  className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-semibold py-3 rounded-lg transition-all duration-200 transform hover:scale-[1.02]"
+                >
+                  Update Attendance
                 </Button>
               </div>
             </motion.div>
