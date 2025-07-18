@@ -77,7 +77,7 @@ const Navbar = () => {
         {/* Logo */}
         <Link to="/" className="flex items-center">
           <img 
-            src="/lovable-uploads/770747a5-bd5f-4cb8-adb3-39a627bc78c2.png" 
+            src="/lovable-uploads/49b75ac2-8bd1-4149-a89a-1443b5a8ed5c.png" 
             alt="BaseLine Academy" 
             className="h-12 md:h-16"
           />
