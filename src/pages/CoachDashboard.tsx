@@ -195,20 +195,35 @@ const CoachDashboard = () => {
 
     return () => clearInterval(interval);
   }, [currentAnnouncement]);
-  // Generate calendar dates for current month
+  // Generate calendar dates for current month with date restrictions
   const getCalendarDates = () => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+    const todayString = today.toISOString().split('T')[0];
     const dates = [];
     
     for (let i = 1; i <= daysInMonth; i++) {
       const date = new Date(year, month, i);
-      dates.push({
-        date: i,
-        fullDate: date.toISOString().split('T')[0],
-        dayName: date.toLocaleDateString('en-US', { weekday: 'short' })
-      });
+      const dateString = date.toISOString().split('T')[0];
+      
+      // Check if date is in the future
+      const isFuture = date > today;
+      const daysDiff = Math.ceil((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Only include future dates if they are within 3 days
+      const shouldInclude = !isFuture || daysDiff <= 3;
+      
+      if (shouldInclude) {
+        dates.push({
+          date: i,
+          fullDate: dateString,
+          dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
+          isDisabled: isFuture && daysDiff > 0 && daysDiff <= 3,
+          isToday: dateString === todayString
+        });
+      }
     }
     return dates;
   };
@@ -217,6 +232,12 @@ const CoachDashboard = () => {
 
   // Handle attendance toggle
   const handleAttendanceToggle = (playerId: number, checked: boolean) => {
+    // Check if the selected date is disabled (future date)
+    const selectedDateObj = calendarDates.find(d => d.fullDate === selectedDate);
+    if (selectedDateObj?.isDisabled) {
+      return; // Don't allow toggling for disabled dates
+    }
+    
     setAttendance(prev => ({
       ...prev,
       [selectedDate]: {
@@ -626,23 +647,23 @@ const CoachDashboard = () => {
               className="bg-gradient-to-br from-gray-900/80 via-gray-900/60 to-gray-800/80 backdrop-blur-lg rounded-xl border border-gray-700/50 shadow-2xl overflow-hidden"
             >
               {/* Header */}
-              <div className="bg-gradient-to-r from-primary to-primary/80 px-6 py-4">
-                <h2 className="text-xl font-bold text-white">Attendance</h2>
+              <div className="bg-gradient-to-r from-primary to-primary/80 px-4 sm:px-6 py-4">
+                <h2 className="text-lg sm:text-xl font-bold text-white">Attendance</h2>
               </div>
 
               {/* Calendar Navigation */}
-              <div className="p-6 pb-4">
+              <div className="p-4 sm:p-6 pb-4">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => navigateMonth('prev')}
-                      className="text-white hover:bg-gray-800"
+                      className="text-white hover:bg-gray-800 h-8 w-8 sm:h-9 sm:w-9"
                     >
                       <ChevronLeft size={16} />
                     </Button>
-                    <h3 className="text-lg font-semibold text-white">
+                    <h3 className="text-base sm:text-lg font-semibold text-white">
                       {currentMonth.toLocaleDateString('en-US', { 
                         month: 'long', 
                         year: 'numeric' 
@@ -652,13 +673,13 @@ const CoachDashboard = () => {
                       variant="ghost"
                       size="sm"
                       onClick={() => navigateMonth('next')}
-                      className="text-white hover:bg-gray-800"
+                      className="text-white hover:bg-gray-800 h-8 w-8 sm:h-9 sm:w-9"
                     >
                       <ChevronRight size={16} />
                     </Button>
                   </div>
                   <div className="p-2 bg-gray-800/30 rounded-lg">
-                    <Calendar size={20} className="text-primary" />
+                    <Calendar size={18} className="text-primary sm:w-5 sm:h-5" />
                   </div>
                 </div>
 
@@ -670,12 +691,15 @@ const CoachDashboard = () => {
                         key={dateObj.fullDate}
                         variant={selectedDate === dateObj.fullDate ? "default" : "ghost"}
                         size="sm"
-                        onClick={() => setSelectedDate(dateObj.fullDate)}
-                        className={`flex-shrink-0 flex flex-col items-center gap-1 h-auto py-2 px-3 min-w-[50px] ${
-                          selectedDate === dateObj.fullDate
+                        onClick={() => !dateObj.isDisabled && setSelectedDate(dateObj.fullDate)}
+                        disabled={dateObj.isDisabled}
+                        className={`flex-shrink-0 flex flex-col items-center gap-1 h-auto py-2 px-3 min-w-[50px] transition-all ${
+                          dateObj.isDisabled 
+                            ? 'text-gray-500 cursor-not-allowed opacity-50 hover:bg-transparent' 
+                            : selectedDate === dateObj.fullDate
                             ? 'bg-primary text-white border-primary'
                             : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                        }`}
+                        } ${dateObj.isToday ? 'ring-2 ring-primary/50' : ''}`}
                       >
                         <span className="text-xs font-medium">{dateObj.dayName}</span>
                         <span className="text-lg font-bold">{dateObj.date}</span>
@@ -686,76 +710,90 @@ const CoachDashboard = () => {
               </div>
 
               {/* Search */}
-              <div className="px-6 pb-4">
+              <div className="px-4 sm:px-6 pb-4">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                   <input
                     type="text"
                     placeholder="Search By Name, Phone Number"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                    className="w-full pl-10 pr-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm sm:text-base"
                   />
                 </div>
               </div>
 
               {/* Players List */}
-              <div className="px-6 pb-6">
+              <div className="px-4 sm:px-6 pb-6">
                 <div className="space-y-3 max-h-[400px] overflow-y-auto">
                   {filteredPlayers.length > 0 ? (
-                    filteredPlayers.map((player) => (
-                      <motion.div
-                        key={player.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-gray-800/30 border border-gray-700/50 rounded-lg p-4 hover:bg-gray-800/50 transition-all duration-200"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            {/* Avatar */}
-                            <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center overflow-hidden">
-                              {player.avatar ? (
-                                <img 
-                                  src={player.avatar} 
-                                  alt={player.name} 
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <User size={24} className="text-gray-400" />
-                              )}
+                    filteredPlayers.map((player) => {
+                      const selectedDateObj = calendarDates.find(d => d.fullDate === selectedDate);
+                      const isDateDisabled = selectedDateObj?.isDisabled || false;
+                      
+                      return (
+                        <motion.div
+                          key={player.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className={`bg-gray-800/30 border border-gray-700/50 rounded-lg p-4 transition-all duration-200 min-h-[60px] ${
+                            isDateDisabled ? 'opacity-60' : 'hover:bg-gray-800/50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 flex-1">
+                              {/* Avatar */}
+                              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-700 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                                {player.avatar ? (
+                                  <img 
+                                    src={player.avatar} 
+                                    alt={player.name} 
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <User size={20} className="text-gray-400 sm:w-6 sm:h-6" />
+                                )}
+                              </div>
+                              
+                              {/* Player Info */}
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-white text-sm sm:text-base truncate">
+                                  {player.name}
+                                </h3>
+                                <p className="text-xs sm:text-sm text-gray-400">
+                                  Attendance: {player.attendedClasses}
+                                </p>
+                              </div>
                             </div>
                             
-                            {/* Player Info */}
-                            <div>
-                              <h3 className="font-semibold text-white">{player.name}</h3>
-                              <p className="text-sm text-gray-400">
-                                Attendance: {player.attendedClasses}
-                              </p>
+                            {/* Toggle Switch */}
+                            <div className="flex-shrink-0 ml-2">
+                              <Switch
+                                checked={attendance[selectedDate]?.[player.id] || false}
+                                onCheckedChange={(checked) => handleAttendanceToggle(player.id, checked)}
+                                disabled={isDateDisabled}
+                                className={isDateDisabled ? 'opacity-50 cursor-not-allowed' : ''}
+                              />
                             </div>
                           </div>
-                          
-                          {/* Toggle Switch */}
-                          <Switch
-                            checked={attendance[selectedDate]?.[player.id] || false}
-                            onCheckedChange={(checked) => handleAttendanceToggle(player.id, checked)}
-                          />
-                        </div>
-                      </motion.div>
-                    ))
+                        </motion.div>
+                      );
+                    })
                   ) : (
                     <div className="text-center py-12">
-                      <Users size={48} className="mx-auto mb-4 text-gray-500" />
-                      <p className="text-gray-400">No players found</p>
+                      <Users size={32} className="mx-auto mb-4 text-gray-500 sm:w-12 sm:h-12" />
+                      <p className="text-gray-400 text-sm sm:text-base">No players found</p>
                     </div>
                   )}
                 </div>
               </div>
 
               {/* Update Button */}
-              <div className="px-6 pb-6">
+              <div className="px-4 sm:px-6 pb-6">
                 <Button 
                   onClick={handleUpdateAttendance}
-                  className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-semibold py-3 rounded-lg transition-all duration-200 transform hover:scale-[1.02]"
+                  className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-semibold py-3 rounded-lg transition-all duration-200 transform hover:scale-[1.02] text-sm sm:text-base"
+                  disabled={calendarDates.find(d => d.fullDate === selectedDate)?.isDisabled}
                 >
                   Update Attendance
                 </Button>
