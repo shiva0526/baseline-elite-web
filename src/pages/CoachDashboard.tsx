@@ -6,7 +6,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from "@/components/ui/use-toast";
 import { motion, AnimatePresence } from 'framer-motion';
-import PlayerProfile from '@/components/coach/PlayerProfile';
 
 // Tournament interface
 interface Tournament {
@@ -107,7 +106,6 @@ const CoachDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const [playerToRemove, setPlayerToRemove] = useState<Player | null>(null);
-  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   
   // New attendance state
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -868,8 +866,8 @@ const CoachDashboard = () => {
                     }
                   }} layout className="bg-gray-800/30 backdrop-blur-sm border border-gray-700/50 rounded-lg p-4 hover:bg-gray-800/50 transition-all duration-200">
                         <div className="flex items-center justify-between">
-                          <div className="flex-1 cursor-pointer" onClick={() => setSelectedPlayer(player)}>
-                            <h3 className="font-semibold text-white mb-1 hover:text-primary transition-colors">{player.name}</h3>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-white mb-1">{player.name}</h3>
                             <div className="flex items-center space-x-3 text-sm text-gray-400">
                               <span className="px-2 py-1 bg-baseline-yellow/20 text-baseline-yellow rounded-full text-xs">
                                 {player.program}
@@ -1329,16 +1327,6 @@ const CoachDashboard = () => {
             </motion.div>
           </motion.div>}
       </AnimatePresence>
-
-      {/* Player Profile Modal */}
-      {selectedPlayer && (
-        <div className="fixed inset-0 z-50 bg-background">
-          <PlayerProfile 
-            player={selectedPlayer} 
-            onBack={() => setSelectedPlayer(null)} 
-          />
-        </div>
-      )}
     </div>;
 };
 export default CoachDashboard;
