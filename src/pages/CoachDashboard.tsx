@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from "@/components/ui/use-toast";
 import { motion, AnimatePresence } from 'framer-motion';
+import PlayerProfile from '@/components/coach/PlayerProfile';
 
 // Tournament interface
 interface Tournament {
@@ -106,6 +107,7 @@ const CoachDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const [playerToRemove, setPlayerToRemove] = useState<Player | null>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   
   // New attendance state
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -540,6 +542,16 @@ const CoachDashboard = () => {
     }
     return `${minutes}m remaining`;
   };
+  // Show player profile if selected
+  if (selectedPlayer) {
+    return (
+      <PlayerProfile
+        player={selectedPlayer}
+        onBack={() => setSelectedPlayer(null)}
+      />
+    );
+  }
+
   return <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-900 text-white">
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
@@ -757,7 +769,10 @@ const CoachDashboard = () => {
                               
                               {/* Player Info */}
                               <div className="flex-1 min-w-0">
-                                <h3 className="font-semibold text-white text-sm sm:text-base truncate">
+                                <h3 
+                                  className="font-semibold text-white text-sm sm:text-base truncate cursor-pointer hover:text-baseline-yellow transition-colors"
+                                  onClick={() => setSelectedPlayer(player)}
+                                >
                                   {player.name}
                                 </h3>
                                 <p className="text-xs sm:text-sm text-gray-400">
@@ -867,7 +882,12 @@ const CoachDashboard = () => {
                   }} layout className="bg-gray-800/30 backdrop-blur-sm border border-gray-700/50 rounded-lg p-4 hover:bg-gray-800/50 transition-all duration-200">
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
-                            <h3 className="font-semibold text-white mb-1">{player.name}</h3>
+                            <h3 
+                              className="font-semibold text-white mb-1 cursor-pointer hover:text-baseline-yellow transition-colors"
+                              onClick={() => setSelectedPlayer(player)}
+                            >
+                              {player.name}
+                            </h3>
                             <div className="flex items-center space-x-3 text-sm text-gray-400">
                               <span className="px-2 py-1 bg-baseline-yellow/20 text-baseline-yellow rounded-full text-xs">
                                 {player.program}
