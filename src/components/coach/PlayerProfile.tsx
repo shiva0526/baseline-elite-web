@@ -48,28 +48,28 @@ const PlayerProfile = ({ player, onBack }: PlayerProfileProps) => {
   const playerGender = "Male"; // Mock data
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-black">
       {/* Header with back button */}
-      <div className="border-b bg-card">
+      <div className="border-b border-white/10 bg-black">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
               size="sm"
               onClick={onBack}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 text-white hover:text-baseline-yellow hover:bg-white/10"
             >
               <ArrowLeft className="h-4 w-4" />
               Back
             </Button>
-            <h1 className="text-2xl font-bold text-foreground">Player Profile</h1>
+            <h1 className="text-2xl font-bold text-white">Player Profile</h1>
           </div>
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-6 max-w-4xl">
         {/* Player Info Section */}
-        <Card className="mb-6 bg-gradient-to-r from-primary/10 to-accent/10">
+        <Card className="mb-6 bg-gradient-to-r from-baseline-yellow/20 to-white/10 border-baseline-yellow/30">
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
               {/* Avatar */}
@@ -78,11 +78,11 @@ const PlayerProfile = ({ player, onBack }: PlayerProfileProps) => {
                   <img
                     src={player.avatar}
                     alt={player.name}
-                    className="w-20 h-20 rounded-full object-cover border-2 border-primary/20"
+                    className="w-20 h-20 rounded-full object-cover border-2 border-baseline-yellow"
                   />
                 ) : (
-                  <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary/30">
-                    <span className="text-xl font-semibold text-primary">
+                  <div className="w-20 h-20 rounded-full bg-baseline-yellow/20 flex items-center justify-center border-2 border-baseline-yellow">
+                    <span className="text-xl font-semibold text-baseline-yellow">
                       {getInitials(player.name)}
                     </span>
                   </div>
@@ -91,8 +91,8 @@ const PlayerProfile = ({ player, onBack }: PlayerProfileProps) => {
 
               {/* Player Details */}
               <div className="flex-1 space-y-2">
-                <h2 className="text-3xl font-bold text-foreground">{player.name}</h2>
-                <div className="flex flex-wrap gap-4 text-muted-foreground">
+                <h2 className="text-3xl font-bold text-white">{player.name}</h2>
+                <div className="flex flex-wrap gap-4 text-gray-300">
                   <span className="flex items-center gap-1">
                     <User className="h-4 w-4" />
                     {playerAge} Years | {playerGender}
@@ -107,14 +107,14 @@ const PlayerProfile = ({ player, onBack }: PlayerProfileProps) => {
 
         {/* Tabs Section */}
         <Tabs defaultValue="stats" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="stats" className="relative">
+          <TabsList className="grid w-full grid-cols-3 mb-6 bg-white/10 border-baseline-yellow/30">
+            <TabsTrigger value="stats" className="relative text-white data-[state=active]:bg-baseline-yellow data-[state=active]:text-black">
               Stats
             </TabsTrigger>
-            <TabsTrigger value="performance" className="relative">
+            <TabsTrigger value="performance" className="relative text-white data-[state=active]:bg-baseline-yellow data-[state=active]:text-black">
               Performance
             </TabsTrigger>
-            <TabsTrigger value="attendance" className="relative">
+            <TabsTrigger value="attendance" className="relative text-white data-[state=active]:bg-baseline-yellow data-[state=active]:text-black">
               Attendance
             </TabsTrigger>
           </TabsList>
@@ -123,32 +123,32 @@ const PlayerProfile = ({ player, onBack }: PlayerProfileProps) => {
           <TabsContent value="stats" className="space-y-6">
             {/* Overall Stats */}
             <div>
-              <h3 className="text-xl font-semibold text-foreground mb-4">Overall Stats</h3>
+              <h3 className="text-xl font-semibold text-white mb-4">Overall Stats</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
+                <Card className="bg-white/10 border-white/20">
                   <CardContent className="p-6 text-center">
-                    <div className="text-3xl font-bold text-primary mb-2">
+                    <div className="text-3xl font-bold text-baseline-yellow mb-2">
                       {playerStats.totalMatches}
                     </div>
-                    <div className="text-sm text-muted-foreground">Total Matches</div>
+                    <div className="text-sm text-gray-300">Total Matches</div>
                   </CardContent>
                 </Card>
                 
-                <Card>
+                <Card className="bg-white/10 border-white/20">
                   <CardContent className="p-6 text-center">
-                    <div className="text-3xl font-bold text-green-600 mb-2">
+                    <div className="text-3xl font-bold text-green-400 mb-2">
                       {playerStats.wins}
                     </div>
-                    <div className="text-sm text-muted-foreground">Wins</div>
+                    <div className="text-sm text-gray-300">Wins</div>
                   </CardContent>
                 </Card>
                 
-                <Card>
+                <Card className="bg-white/10 border-white/20">
                   <CardContent className="p-6 text-center">
-                    <div className="text-3xl font-bold text-red-600 mb-2">
+                    <div className="text-3xl font-bold text-red-400 mb-2">
                       {playerStats.losses}
                     </div>
-                    <div className="text-sm text-muted-foreground">Losses</div>
+                    <div className="text-sm text-gray-300">Losses</div>
                   </CardContent>
                 </Card>
               </div>
@@ -156,10 +156,10 @@ const PlayerProfile = ({ player, onBack }: PlayerProfileProps) => {
 
             {/* Shots Details Section */}
             <div>
-              <h3 className="text-xl font-semibold text-foreground mb-4">Shots Details</h3>
-              <Card>
+              <h3 className="text-xl font-semibold text-white mb-4">Shots Details</h3>
+              <Card className="bg-white/10 border-white/20">
                 <CardContent className="p-8 text-center">
-                  <div className="text-muted-foreground">
+                  <div className="text-gray-300">
                     <div className="text-lg mb-2">No shot statistics available yet</div>
                     <p className="text-sm">Shot statistics will be displayed here once data is available.</p>
                   </div>
@@ -170,9 +170,9 @@ const PlayerProfile = ({ player, onBack }: PlayerProfileProps) => {
 
           {/* Performance Tab */}
           <TabsContent value="performance" className="space-y-6">
-            <Card>
+            <Card className="bg-white/10 border-white/20">
               <CardContent className="p-8 text-center">
-                <div className="text-muted-foreground">
+                <div className="text-gray-300">
                   <div className="text-lg mb-2">Performance metrics coming soon</div>
                   <p className="text-sm">Detailed performance analytics will be available in future updates.</p>
                 </div>
@@ -182,15 +182,15 @@ const PlayerProfile = ({ player, onBack }: PlayerProfileProps) => {
 
           {/* Attendance Tab */}
           <TabsContent value="attendance" className="space-y-6">
-            <Card>
+            <Card className="bg-white/10 border-white/20">
               <CardContent className="p-6">
                 <div className="text-center mb-4">
-                  <div className="text-2xl font-bold text-primary mb-2">
+                  <div className="text-2xl font-bold text-baseline-yellow mb-2">
                     {player.attendedClasses}
                   </div>
-                  <div className="text-sm text-muted-foreground">Total Classes Attended</div>
+                  <div className="text-sm text-gray-300">Total Classes Attended</div>
                 </div>
-                <div className="text-center text-muted-foreground">
+                <div className="text-center text-gray-300">
                   <p className="text-sm">Detailed attendance history will be available in future updates.</p>
                 </div>
               </CardContent>
