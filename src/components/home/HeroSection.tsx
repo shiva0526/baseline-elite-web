@@ -3,7 +3,7 @@ import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import Basketball3D from '@/components/effects/Basketball3D';
+
 
 const HeroSection = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -33,32 +33,40 @@ const HeroSection = () => {
 
   return (
     <section className="relative h-screen overflow-hidden bg-black flex items-center">
-      {/* Background Video */}
-      <div className="absolute inset-0 opacity-40">
-        <video 
-          ref={videoRef}
-          autoPlay 
-          muted 
-          loop 
-          playsInline
-          className="w-full h-full object-cover"
-        >
-          <source src="/videos/basketball-training.mp4" type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
+      {/* Background Video - Only visible on right side */}
+      <div className="absolute inset-0">
+        <div className="w-full h-full flex">
+          {/* Left side - solid black background */}
+          <div className="w-1/2 bg-black"></div>
+          
+          {/* Right side - video with increased brightness */}
+          <div className="w-1/2 relative opacity-70">
+            <video 
+              ref={videoRef}
+              autoPlay 
+              muted 
+              loop 
+              playsInline
+              className="w-full h-full object-cover brightness-125"
+            >
+              <source src="/videos/baseline_1.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </div>
       </div>
       
-      {/* Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent"></div>
+      {/* Gradient Overlay - lighter to allow video to show through on right */}
+      <div className="absolute inset-0 bg-gradient-to-r from-black via-black/90 to-black/30"></div>
       
       {/* Content */}
       <div className="relative container mx-auto h-full flex items-center px-4 z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center w-full">
+        <div className="w-full flex items-center">
           <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="max-w-2xl"
+            className="max-w-2xl w-1/2"
           >
             <motion.h1 
               variants={itemVariants}
@@ -100,16 +108,6 @@ const HeroSection = () => {
                 </motion.button>
               </Link>
             </motion.div>
-          </motion.div>
-          
-          {/* 3D Basketball */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.5, duration: 1 }}
-            className="hidden lg:flex justify-center items-center"
-          >
-            <Basketball3D />
           </motion.div>
         </div>
       </div>

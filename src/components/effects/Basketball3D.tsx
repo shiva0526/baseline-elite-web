@@ -1,4 +1,4 @@
-
+/*
 import { Canvas } from '@react-three/fiber';
 import BasketballMesh from './basketball/BasketballMesh';
 
@@ -27,3 +27,4 @@ const Basketball3D = () => {
 };
 
 export default Basketball3D;
+*/
