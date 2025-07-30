@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, LogOut } from 'lucide-react';
@@ -12,25 +11,19 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
-  
+
   useEffect(() => {
-    // Check if user is logged in
     const role = localStorage.getItem('userRole');
     setUserRole(role);
-    
-    // Handle scroll for transparent header
+
     const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
+      setScrolled(window.scrollY > 20);
     };
-    
+
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [location.pathname]); // Re-check when route changes
-  
+  }, [location.pathname]);
+
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'About', path: '/about' },
@@ -40,11 +33,11 @@ const Navbar = () => {
     { name: 'Tournaments', path: '/tournaments' },
     { name: 'Contact', path: '/contact' },
   ];
-  
+
   const handleJoinClick = () => {
     navigate('/programs');
   };
-  
+
   const handleLoginClick = () => {
     navigate('/login');
   };
@@ -56,7 +49,7 @@ const Navbar = () => {
       navigate('/parent-dashboard');
     }
   };
-  
+
   const handleLogout = () => {
     localStorage.removeItem('userRole');
     setUserRole(null);
@@ -66,7 +59,7 @@ const Navbar = () => {
     });
     navigate('/', { replace: true });
   };
-  
+
   return (
     <header 
       className={`fixed w-full top-0 z-50 transition-all duration-300 ${
@@ -82,7 +75,7 @@ const Navbar = () => {
             className="h-12 md:h-16"
           />
         </Link>
-        
+
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
           {navLinks.map((link) => (
@@ -116,20 +109,16 @@ const Navbar = () => {
             </Button>
           </div>
         </nav>
-        
+
         {/* Mobile Menu Button */}
         <button 
           onClick={() => setIsOpen(!isOpen)}
           className="md:hidden text-white hover:text-baseline-yellow"
         >
-          {isOpen ? (
-            <X size={28} />
-          ) : (
-            <Menu size={28} />
-          )}
+          {isOpen ? <X size={28} /> : <Menu size={28} />}
         </button>
       </div>
-      
+
       {/* Mobile Navigation */}
       {isOpen && (
         <div className="fixed inset-0 top-[72px] bg-black z-40 flex flex-col md:hidden animate-fade-in">
