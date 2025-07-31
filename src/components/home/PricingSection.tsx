@@ -118,11 +118,7 @@ const PricingSection = () => {
               )}
               
               <div className="p-8">
-                <h3 className="text-2xl font-bold text-white mb-4">{plan.title}</h3>
-                <div className="flex items-end mb-8">
-                  <span className="text-5xl font-display font-bold text-baseline-yellow">{plan.price}</span>
-                  <span className="text-gray-400 ml-2 mb-1">{plan.period}</span>
-                </div>
+                <h3 className="text-2xl font-bold text-white mb-8">{plan.title}</h3>
                 
                 <ul className="space-y-4 mb-8">
                   {plan.features.map((feature, idx) => (

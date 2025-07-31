@@ -2,8 +2,20 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Instagram, Mail, Phone, MapPin } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const Footer = () => {
+  const { toast } = useToast();
+
+  const copyToClipboard = (text: string, type: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast({
+        title: "Copied!",
+        description: `${type} copied to clipboard`,
+      });
+    });
+  };
+
   const footerVariants = {
     hidden: { opacity: 0, y: 50 },
     visible: {
@@ -40,7 +52,7 @@ const Footer = () => {
           <motion.div variants={itemVariants} className="space-y-6">
             <Link to="/" className="inline-block">
               <img 
-                src="/images/Logo-Baseline-copy.png" 
+                src="/images/Logo.png" 
                 alt="BaseLine Academy" 
                 className="h-16 mb-4" 
               />
@@ -52,19 +64,21 @@ const Footer = () => {
               <motion.a
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                href="#"
+                href="https://www.instagram.com/baseline_academy_foundation/?hl=en"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-10 h-10 bg-baseline-yellow text-black rounded-full flex items-center justify-center hover:bg-baseline-yellow/90 transition-colors"
               >
                 <Instagram size={20} />
               </motion.a>
-              <motion.a
+              <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                href="mailto:info@baselineelite.com"
+                onClick={() => copyToClipboard('info@baselineelite.com', 'Email')}
                 className="w-10 h-10 bg-baseline-yellow text-black rounded-full flex items-center justify-center hover:bg-baseline-yellow/90 transition-colors"
               >
                 <Mail size={20} />
-              </motion.a>
+              </motion.button>
             </div>
           </motion.div>
           
@@ -74,7 +88,7 @@ const Footer = () => {
               Quick Links
             </h4>
             <nav className="flex flex-col space-y-3">
-              {['Home', 'About Us', 'Programs', 'Gallery', 'Schedule', 'Contact'].map((link) => (
+              {['Home', 'About Us', 'Programs', 'Gallery', 'Contact'].map((link) => (
                 <motion.div
                   key={link}
                   whileHover={{ x: 5 }}
@@ -120,20 +134,22 @@ const Footer = () => {
               Contact Us
             </h4>
             <div className="space-y-4">
-              <motion.div
+              <motion.button
                 whileHover={{ x: 5 }}
-                className="flex items-center gap-4 text-gray-300"
+                onClick={() => copyToClipboard('+91 90000 00000', 'Phone number')}
+                className="flex items-center gap-4 text-gray-300 hover:text-baseline-yellow transition-colors cursor-pointer"
               >
                 <Phone className="text-baseline-yellow" size={20} />
                 <span>+91 90000 00000</span>
-              </motion.div>
-              <motion.div
+              </motion.button>
+              <motion.button
                 whileHover={{ x: 5 }}
-                className="flex items-center gap-4 text-gray-300"
+                onClick={() => copyToClipboard('info@baselineelite.com', 'Email')}
+                className="flex items-center gap-4 text-gray-300 hover:text-baseline-yellow transition-colors cursor-pointer"
               >
                 <Mail className="text-baseline-yellow" size={20} />
                 <span>info@baselineelite.com</span>
-              </motion.div>
+              </motion.button>
               <motion.div
                 whileHover={{ x: 5 }}
                 className="flex items-center gap-4 text-gray-300"

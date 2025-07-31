@@ -29,7 +29,6 @@ const Navbar = () => {
     { name: 'About', path: '/about' },
     { name: 'Programs', path: '/programs' },
     { name: 'Gallery', path: '/gallery' },
-    { name: 'Schedule', path: '/schedule' },
     { name: 'Tournaments', path: '/tournaments' },
     { name: 'Contact', path: '/contact' },
   ];

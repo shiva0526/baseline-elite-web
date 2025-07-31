@@ -8,7 +8,7 @@ import Index from "./pages/Index";
 import About from "./pages/About";
 import Programs from "./pages/Programs";
 import Gallery from "./pages/Gallery";
-import Schedule from "./pages/Schedule";
+
 import Contact from "./pages/Contact";
 import Tournaments from "./pages/Tournaments";
 import Login from "./pages/Login";
@@ -30,7 +30,7 @@ const App: React.FC = () => {
           <Route path="/about" element={<About />} />
           <Route path="/programs" element={<Programs />} />
           <Route path="/gallery" element={<Gallery />} />
-          <Route path="/schedule" element={<Schedule />} />
+          
           <Route path="/tournaments" element={<Tournaments />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login />} />

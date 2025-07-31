@@ -578,7 +578,7 @@ const CoachDashboard = () => {
               <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden mr-2 text-gray-300 hover:text-white">
                 <Menu size={20} />
               </Button>
-              <img src="/images/Logo-Baseline-copy.png" alt="BaseLine Academy" className="h-12 mr-4" />
+              <img src="/images/Logo.png" alt="BaseLine Academy" className="h-12 mr-4" width="100" height="200"/>
               <div>
                 <h1 className="text-xl font-bold">Coach Dashboard</h1>
                 <p className="text-sm text-gray-400">Manage your academy</p>

@@ -7,7 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 
-type Role = 'coach' | 'parent' | null;
+type Role = 'coach' | null;
 type LoginStage = 'select-role' | 'login-form';
 
 const Login = () => {
@@ -55,17 +55,6 @@ const Login = () => {
         
         // Redirect to coach dashboard
         navigate('/coach-dashboard');
-      } else if (email === 'parent@baseline.com' && password === 'parent123' && selectedRole === 'parent') {
-        // Store user role in localStorage
-        localStorage.setItem('userRole', 'parent');
-        
-        toast({
-          title: "Login successful!",
-          description: "Welcome to your dashboard!",
-        });
-        
-        // Redirect to parent dashboard
-        navigate('/parent-dashboard');
       } else {
         setError('Invalid email or password');
         console.log('Login failed: Invalid credentials');
@@ -108,25 +97,15 @@ const Login = () => {
                     <p className="text-gray-400 text-sm">Select how you'd like to access the platform</p>
                   </div>
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="flex justify-center">
                     <button
                       onClick={() => handleRoleSelect('coach')}
-                      className="group relative bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-white/10 rounded-xl p-8 flex flex-col items-center justify-center transition-all duration-300 hover:border-baseline-yellow/50 hover:bg-gradient-to-br hover:from-baseline-yellow/10 hover:to-orange-500/10 hover:scale-105 hover:shadow-lg hover:shadow-baseline-yellow/20"
+                      className="group relative bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-white/10 rounded-xl p-8 flex flex-col items-center justify-center transition-all duration-300 hover:border-baseline-yellow/50 hover:bg-gradient-to-br hover:from-baseline-yellow/10 hover:to-orange-500/10 hover:scale-105 hover:shadow-lg hover:shadow-baseline-yellow/20 max-w-xs"
                     >
                       <div className="absolute inset-0 bg-gradient-to-br from-baseline-yellow/0 to-baseline-yellow/0 group-hover:from-baseline-yellow/5 group-hover:to-orange-500/5 rounded-xl transition-all duration-300" />
                       <UserCog size={48} className="text-baseline-yellow mb-4 group-hover:scale-110 transition-transform duration-300" />
                       <span className="text-lg font-semibold text-white group-hover:text-baseline-yellow transition-colors duration-300">Coach Portal</span>
                       <span className="text-sm text-gray-400 mt-2 group-hover:text-gray-300 transition-colors duration-300">Manage teams & training</span>
-                    </button>
-                    
-                    <button
-                      onClick={() => handleRoleSelect('parent')}
-                      className="group relative bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-white/10 rounded-xl p-8 flex flex-col items-center justify-center transition-all duration-300 hover:border-baseline-yellow/50 hover:bg-gradient-to-br hover:from-baseline-yellow/10 hover:to-orange-500/10 hover:scale-105 hover:shadow-lg hover:shadow-baseline-yellow/20"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-br from-baseline-yellow/0 to-baseline-yellow/0 group-hover:from-baseline-yellow/5 group-hover:to-orange-500/5 rounded-xl transition-all duration-300" />
-                      <User size={48} className="text-baseline-yellow mb-4 group-hover:scale-110 transition-transform duration-300" />
-                      <span className="text-lg font-semibold text-white group-hover:text-baseline-yellow transition-colors duration-300">Parent Portal</span>
-                      <span className="text-sm text-gray-400 mt-2 group-hover:text-gray-300 transition-colors duration-300">Track progress & schedules</span>
                     </button>
                   </div>
                 </div>
@@ -141,14 +120,8 @@ const Login = () => {
                   </button>
                   
                   <div className="text-center">
-                    <h3 className="text-2xl font-bold text-white mb-2">
-                      {selectedRole === 'coach' ? '🏀 Coach Login' : '👨‍👩‍👧‍👦 Parent Login'}
-                    </h3>
-                    <p className="text-gray-400 text-sm">
-                      {selectedRole === 'coach' ? 
-                        'Access your coaching dashboard and team management tools' : 
-                        'View your child\'s progress and upcoming sessions'}
-                    </p>
+                    <h3 className="text-2xl font-bold text-white mb-2">🏀 Coach Login</h3>
+                    <p className="text-gray-400 text-sm">Access your coaching dashboard and team management tools</p>
                   </div>
                   
                   {error && (
@@ -204,18 +177,14 @@ const Login = () => {
                           <span>Signing in...</span>
                         </div>
                       ) : (
-                        `Sign In to ${selectedRole === 'coach' ? 'Coach' : 'Parent'} Portal`
+                        'Sign In to Coach Portal'
                       )}
                     </Button>
                     
                     <div className="bg-gradient-to-r from-gray-800/50 to-gray-700/50 backdrop-blur-sm rounded-lg p-4 border border-white/10">
                       <div className="text-center text-sm text-gray-400">
                         <p className="font-medium text-baseline-yellow mb-1">Demo Credentials:</p>
-                        <p className="font-mono text-xs">
-                          {selectedRole === 'coach' ? 
-                            'coach@baseline.com / coach123' : 
-                            'parent@baseline.com / parent123'}
-                        </p>
+                        <p className="font-mono text-xs">coach@baseline.com / coach123</p>
                       </div>
                     </div>
                   </form>
