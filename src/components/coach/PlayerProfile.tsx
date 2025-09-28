@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { ArrowLeft, User } from 'lucide-react';
+import { ArrowLeft, User, Star, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 interface Player {
   id: number;
@@ -24,6 +25,42 @@ interface PlayerStats {
   losses: number;
 }
 
+interface PerformanceEntry {
+  id: string;
+  campTitle: string;
+  timeRange: string;
+  generalRating: number;
+  skillsRating: number;
+  coachName: string;
+  date: string;
+  notes: string;
+  isShared: boolean;
+}
+
+interface StarRatingProps {
+  rating: number;
+  maxRating?: number;
+  readonly?: boolean;
+}
+
+// Star Rating Component
+const StarRating = ({ rating, maxRating = 5, readonly = true }: StarRatingProps) => {
+  return (
+    <div className="flex gap-1">
+      {[...Array(maxRating)].map((_, index) => (
+        <Star
+          key={index}
+          className={`h-4 w-4 ${
+            index < rating 
+              ? 'fill-baseline-yellow text-baseline-yellow' 
+              : 'fill-gray-600 text-gray-600'
+          }`}
+        />
+      ))}
+    </div>
+  );
+};
+
 const PlayerProfile = ({ player, onBack }: PlayerProfileProps) => {
   // Load player stats from localStorage
   const getPlayerStats = (): PlayerStats => {
@@ -31,7 +68,37 @@ const PlayerProfile = ({ player, onBack }: PlayerProfileProps) => {
     return stored ? JSON.parse(stored) : { totalMatches: 0, wins: 0, losses: 0 };
   };
 
+  const getPlayerPerformance = (): PerformanceEntry[] => {
+    const stored = localStorage.getItem(`player_performance_${player.id}`);
+    return stored ? JSON.parse(stored) : [
+      {
+        id: '1',
+        campTitle: 'Basketball Annual Camp',
+        timeRange: '5:00 PM – 6:15 PM',
+        generalRating: 4,
+        skillsRating: 3,
+        coachName: 'Coach Johnson',
+        date: '2024-01-15',
+        notes: 'Great improvement in shooting form and defensive stance.',
+        isShared: true
+      },
+      {
+        id: '2',
+        campTitle: 'Advanced Skills Training',
+        timeRange: '4:00 PM – 5:30 PM',
+        generalRating: 5,
+        skillsRating: 4,
+        coachName: 'Coach Smith',
+        date: '2024-01-20',
+        notes: 'Excellent ball handling skills. Needs work on free throws.',
+        isShared: false
+      }
+    ];
+  };
+
   const [playerStats] = useState<PlayerStats>(getPlayerStats());
+  const [performanceEntries] = useState<PerformanceEntry[]>(getPlayerPerformance());
+  const [showShared, setShowShared] = useState(true);
   
   // Generate initials for avatar
   const getInitials = (name: string) => {
@@ -108,13 +175,22 @@ const PlayerProfile = ({ player, onBack }: PlayerProfileProps) => {
         {/* Tabs Section */}
         <Tabs defaultValue="stats" className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-6 bg-white/10 border-baseline-yellow/30">
-            <TabsTrigger value="stats" className="relative text-white data-[state=active]:bg-baseline-yellow data-[state=active]:text-black">
+            <TabsTrigger 
+              value="stats" 
+              className="relative text-white data-[state=active]:bg-baseline-yellow data-[state=active]:text-black data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:h-0.5 data-[state=active]:after:bg-gradient-to-r data-[state=active]:after:from-baseline-yellow data-[state=active]:after:to-yellow-400"
+            >
               Stats
             </TabsTrigger>
-            <TabsTrigger value="performance" className="relative text-white data-[state=active]:bg-baseline-yellow data-[state=active]:text-black">
+            <TabsTrigger 
+              value="performance" 
+              className="relative text-white data-[state=active]:bg-baseline-yellow data-[state=active]:text-black data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:h-0.5 data-[state=active]:after:bg-gradient-to-r data-[state=active]:after:from-baseline-yellow data-[state=active]:after:to-yellow-400"
+            >
               Performance
             </TabsTrigger>
-            <TabsTrigger value="attendance" className="relative text-white data-[state=active]:bg-baseline-yellow data-[state=active]:text-black">
+            <TabsTrigger 
+              value="attendance" 
+              className="relative text-white data-[state=active]:bg-baseline-yellow data-[state=active]:text-black data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:h-0.5 data-[state=active]:after:bg-gradient-to-r data-[state=active]:after:from-baseline-yellow data-[state=active]:after:to-yellow-400"
+            >
               Attendance
             </TabsTrigger>
           </TabsList>
@@ -170,14 +246,118 @@ const PlayerProfile = ({ player, onBack }: PlayerProfileProps) => {
 
           {/* Performance Tab */}
           <TabsContent value="performance" className="space-y-6">
-            <Card className="bg-white/10 border-white/20">
-              <CardContent className="p-8 text-center">
-                <div className="text-gray-300">
-                  <div className="text-lg mb-2">Performance metrics coming soon</div>
-                  <p className="text-sm">Detailed performance analytics will be available in future updates.</p>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Toggle Button */}
+            <div className="flex justify-center mb-6">
+              <div className="flex bg-white/10 rounded-lg p-1 border border-white/20">
+                <Button
+                  variant={showShared ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setShowShared(true)}
+                  className={`px-6 py-2 rounded-md transition-all ${
+                    showShared 
+                      ? 'bg-baseline-yellow text-black shadow-md' 
+                      : 'text-white hover:bg-white/10 hover:text-baseline-yellow'
+                  }`}
+                >
+                  Shared
+                </Button>
+                <Button
+                  variant={!showShared ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setShowShared(false)}
+                  className={`px-6 py-2 rounded-md transition-all ${
+                    !showShared 
+                      ? 'bg-baseline-yellow text-black shadow-md' 
+                      : 'text-white hover:bg-white/10 hover:text-baseline-yellow'
+                  }`}
+                >
+                  Draft
+                </Button>
+              </div>
+            </div>
+
+            {/* Performance Entries */}
+            <div className="space-y-4">
+              {performanceEntries
+                .filter(entry => entry.isShared === showShared)
+                .map((entry) => (
+                  <Card key={entry.id} className="bg-white/10 border-white/20 hover:bg-white/15 transition-colors">
+                    <CardContent className="p-6">
+                      <div className="space-y-4">
+                        {/* Header */}
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                          <div>
+                            <h4 className="text-lg font-semibold text-baseline-yellow">
+                              {entry.campTitle}
+                            </h4>
+                            <p className="text-sm text-gray-300">{entry.timeRange}</p>
+                          </div>
+                          <Badge variant="outline" className="border-baseline-yellow/50 text-baseline-yellow w-fit">
+                            {entry.date}
+                          </Badge>
+                        </div>
+
+                        {/* Ratings */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-gray-300">General Attributes</span>
+                              <StarRating rating={entry.generalRating} />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-gray-300">Skills</span>
+                              <StarRating rating={entry.skillsRating} />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Notes */}
+                        {entry.notes && (
+                          <div className="bg-black/30 rounded-lg p-4">
+                            <p className="text-sm text-gray-200">{entry.notes}</p>
+                          </div>
+                        )}
+
+                        {/* Coach Name */}
+                        <div className="flex items-center gap-2 text-sm text-gray-400">
+                          <User className="h-4 w-4" />
+                          <span>Coach: {entry.coachName}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              
+              {performanceEntries.filter(entry => entry.isShared === showShared).length === 0 && (
+                <Card className="bg-white/10 border-white/20">
+                  <CardContent className="p-8 text-center">
+                    <div className="text-gray-300">
+                      <div className="text-lg mb-2">
+                        No {showShared ? 'shared' : 'draft'} performance entries
+                      </div>
+                      <p className="text-sm">
+                        {showShared 
+                          ? 'No shared feedback available yet.' 
+                          : 'No draft feedback available yet.'
+                        }
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Feedback Button */}
+            <div className="flex justify-center pt-6">
+              <Button 
+                className="bg-gradient-to-r from-baseline-yellow to-yellow-400 text-black font-semibold px-8 py-3 rounded-lg hover:shadow-lg hover:shadow-baseline-yellow/20 transition-all"
+              >
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Add Feedback
+              </Button>
+            </div>
           </TabsContent>
 
           {/* Attendance Tab */}
