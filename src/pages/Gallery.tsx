@@ -1,11 +1,16 @@
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { X } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import Autoplay from 'embla-carousel-autoplay';
 
 const Gallery = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const autoplayPlugin = useRef(
+    Autoplay({ delay: 4000, stopOnInteraction: true })
+  );
   
   const images = [
     {
@@ -148,21 +153,63 @@ const Gallery = () => {
             </button>
           </div>
           
-          {/* Image Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {filteredImages.map((image, index) => (
-              <div 
-                key={index} 
-                className="cursor-pointer overflow-hidden rounded-lg hover-scale"
-                onClick={() => setSelectedImage(image.src)}
-              >
-                <img 
-                  src={image.src} 
-                  alt={image.alt} 
-                  className="w-full h-64 object-cover"
-                />
-              </div>
-            ))}
+          {/* Enhanced Carousel Gallery */}
+          <div className="relative">
+            <Carousel
+              opts={{
+                align: "start",
+                loop: true,
+              }}
+              plugins={[autoplayPlugin.current]}
+              className="w-full"
+              onMouseEnter={autoplayPlugin.current.stop}
+              onMouseLeave={autoplayPlugin.current.reset}
+            >
+              <CarouselContent className="-ml-2 md:-ml-4">
+                {filteredImages.map((image, index) => (
+                  <CarouselItem key={index} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
+                    <div className="relative group overflow-hidden rounded-xl">
+                      {/* Gradient Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      
+                      {/* Image */}
+                      <div 
+                        className="cursor-pointer overflow-hidden"
+                        onClick={() => setSelectedImage(image.src)}
+                      >
+                        <img 
+                          src={image.src} 
+                          alt={image.alt} 
+                          className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                      </div>
+                      
+                      {/* Caption */}
+                      <div className="absolute bottom-0 left-0 right-0 p-4 z-20 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                        <h3 className="text-white font-semibold text-lg mb-1">{image.alt}</h3>
+                        <span className="inline-block px-3 py-1 bg-baseline-yellow text-black text-sm rounded-full font-medium capitalize">
+                          {image.category}
+                        </span>
+                      </div>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              
+              {/* Custom Navigation Buttons */}
+              <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/70 border-baseline-yellow text-baseline-yellow hover:bg-baseline-yellow hover:text-black transition-colors duration-300" />
+              <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/70 border-baseline-yellow text-baseline-yellow hover:bg-baseline-yellow hover:text-black transition-colors duration-300" />
+            </Carousel>
+            
+            {/* Progress Indicator */}
+            <div className="flex justify-center mt-6 space-x-2">
+              {filteredImages.map((_, index) => (
+                <div 
+                  key={index} 
+                  className="w-2 h-2 rounded-full bg-gray-600 transition-colors duration-300"
+                ></div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
