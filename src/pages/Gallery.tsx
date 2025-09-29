@@ -2,15 +2,34 @@
 import { useState, useEffect, useRef } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import Autoplay from 'embla-carousel-autoplay';
 
 const Gallery = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
+  
   const autoplayPlugin = useRef(
-    Autoplay({ delay: 4000, stopOnInteraction: true })
+    Autoplay({ delay: 2500, stopOnInteraction: false })
   );
+  
+  // Enhanced carousel tracking
+  const [carouselApi, setCarouselApi] = useState<any>();
+  
+  useEffect(() => {
+    if (!carouselApi) return;
+    
+    const onSelect = () => {
+      setCurrentSlide(carouselApi.selectedScrollSnap());
+    };
+    
+    carouselApi.on('select', onSelect);
+    onSelect();
+    
+    return () => carouselApi?.off('select', onSelect);
+  }, [carouselApi]);
   
   const images = [
     {
@@ -153,62 +172,130 @@ const Gallery = () => {
             </button>
           </div>
           
-          {/* Enhanced Carousel Gallery */}
-          <div className="relative">
+          {/* Enhanced Dynamic Carousel Gallery */}
+          <div className="relative -mx-4 md:-mx-8 lg:-mx-16">
             <Carousel
+              setApi={setCarouselApi}
               opts={{
-                align: "start",
+                align: "center",
                 loop: true,
+                dragFree: true,
               }}
               plugins={[autoplayPlugin.current]}
-              className="w-full"
-              onMouseEnter={autoplayPlugin.current.stop}
-              onMouseLeave={autoplayPlugin.current.reset}
+              className="w-full overflow-hidden"
+              onMouseEnter={() => {
+                if (isPlaying) {
+                  autoplayPlugin.current.stop();
+                }
+              }}
+              onMouseLeave={() => {
+                if (isPlaying) {
+                  autoplayPlugin.current.reset();
+                }
+              }}
             >
-              <CarouselContent className="-ml-2 md:-ml-4">
+              <CarouselContent className="-ml-1">
                 {filteredImages.map((image, index) => (
-                  <CarouselItem key={index} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
-                    <div className="relative group overflow-hidden rounded-xl">
-                      {/* Gradient Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      
-                      {/* Image */}
-                      <div 
-                        className="cursor-pointer overflow-hidden"
-                        onClick={() => setSelectedImage(image.src)}
-                      >
-                        <img 
-                          src={image.src} 
-                          alt={image.alt} 
-                          className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                      </div>
-                      
-                      {/* Caption */}
-                      <div className="absolute bottom-0 left-0 right-0 p-4 z-20 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                        <h3 className="text-white font-semibold text-lg mb-1">{image.alt}</h3>
-                        <span className="inline-block px-3 py-1 bg-baseline-yellow text-black text-sm rounded-full font-medium capitalize">
-                          {image.category}
-                        </span>
+                  <CarouselItem key={index} className="pl-1 basis-4/5 md:basis-2/3 lg:basis-1/2">
+                    <div className="relative group overflow-hidden rounded-2xl mx-2 shadow-2xl">
+                      {/* Ken Burns Effect Container */}
+                      <div className="relative overflow-hidden h-96 md:h-[500px]">
+                        {/* Gradient Overlays */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                        
+                        {/* Dynamic Ken Burns Image */}
+                        <div 
+                          className="cursor-pointer w-full h-full overflow-hidden"
+                          onClick={() => setSelectedImage(image.src)}
+                        >
+                          <img 
+                            src={image.src} 
+                            alt={image.alt} 
+                            className={`w-full h-full object-cover transition-all duration-[8000ms] ease-in-out transform
+                              ${currentSlide === index ? 'scale-110 animate-ken-burns' : 'scale-100'}
+                              group-hover:scale-125 group-hover:brightness-110
+                            `}
+                          />
+                        </div>
+                        
+                        {/* Floating Caption */}
+                        <div className="absolute bottom-0 left-0 right-0 p-6 z-20">
+                          <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                            <h3 className="text-white font-bold text-xl md:text-2xl mb-3 drop-shadow-lg">
+                              {image.alt}
+                            </h3>
+                            <div className="flex items-center gap-3">
+                              <span className="inline-block px-4 py-2 bg-baseline-yellow/90 backdrop-blur-sm text-black text-sm rounded-full font-semibold capitalize shadow-lg">
+                                {image.category}
+                              </span>
+                              <div className="w-2 h-2 rounded-full bg-white/60"></div>
+                              <span className="text-white/80 text-sm font-medium">
+                                Baseline Elite Academy
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Hover Play Indicator */}
+                        <div className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                            <Play className="w-5 h-5 text-baseline-yellow ml-1" fill="currentColor" />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </CarouselItem>
                 ))}
               </CarouselContent>
               
-              {/* Custom Navigation Buttons */}
-              <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/70 border-baseline-yellow text-baseline-yellow hover:bg-baseline-yellow hover:text-black transition-colors duration-300" />
-              <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/70 border-baseline-yellow text-baseline-yellow hover:bg-baseline-yellow hover:text-black transition-colors duration-300" />
+              {/* Enhanced Navigation Buttons */}
+              <CarouselPrevious className="absolute left-8 top-1/2 -translate-y-1/2 w-14 h-14 bg-black/30 backdrop-blur-md border-2 border-baseline-yellow/50 text-baseline-yellow hover:bg-baseline-yellow hover:text-black hover:border-baseline-yellow transition-all duration-300 shadow-xl" />
+              <CarouselNext className="absolute right-8 top-1/2 -translate-y-1/2 w-14 h-14 bg-black/30 backdrop-blur-md border-2 border-baseline-yellow/50 text-baseline-yellow hover:bg-baseline-yellow hover:text-black hover:border-baseline-yellow transition-all duration-300 shadow-xl" />
             </Carousel>
             
-            {/* Progress Indicator */}
-            <div className="flex justify-center mt-6 space-x-2">
+            {/* Dynamic Progress Indicator */}
+            <div className="flex justify-center items-center mt-8 space-x-3">
+              <button
+                onClick={() => {
+                  if (isPlaying) {
+                    autoplayPlugin.current.stop();
+                    setIsPlaying(false);
+                  } else {
+                    autoplayPlugin.current.reset();
+                    setIsPlaying(true);
+                  }
+                }}
+                className="w-8 h-8 rounded-full bg-baseline-yellow/20 border border-baseline-yellow/50 text-baseline-yellow hover:bg-baseline-yellow hover:text-black transition-all duration-300 flex items-center justify-center mr-4"
+              >
+                {isPlaying ? (
+                  <div className="w-2 h-2 bg-current"></div>
+                ) : (
+                  <Play className="w-3 h-3 ml-0.5" fill="currentColor" />
+                )}
+              </button>
+              
               {filteredImages.map((_, index) => (
-                <div 
-                  key={index} 
-                  className="w-2 h-2 rounded-full bg-gray-600 transition-colors duration-300"
-                ></div>
+                <button
+                  key={index}
+                  onClick={() => carouselApi?.scrollTo(index)}
+                  className="relative group"
+                >
+                  <div className={`transition-all duration-300 rounded-full ${
+                    currentSlide === index 
+                      ? 'w-8 h-2 bg-baseline-yellow' 
+                      : 'w-2 h-2 bg-gray-600 group-hover:bg-baseline-yellow/60'
+                  }`}>
+                    {currentSlide === index && (
+                      <div className="absolute inset-0 bg-baseline-yellow rounded-full animate-pulse"></div>
+                    )}
+                  </div>
+                </button>
               ))}
+              
+              <div className="ml-4 text-sm text-gray-400 font-medium">
+                {currentSlide + 1} / {filteredImages.length}
+              </div>
             </div>
           </div>
         </div>
@@ -245,25 +332,77 @@ const Gallery = () => {
         </div>
       </section>
       
-      {/* Lightbox */}
+      {/* Enhanced Immersive Lightbox */}
       {selectedImage && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 animate-fade-in"
+          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm animate-fade-in"
           onClick={() => setSelectedImage(null)}
         >
-          <div className="relative max-w-4xl max-h-[90vh] w-full">
+          <div className="relative w-full h-full flex items-center justify-center p-4">
+            {/* Close Button */}
             <button 
-              className="absolute top-4 right-4 bg-baseline-yellow text-black w-10 h-10 rounded-full flex items-center justify-center"
+              className="absolute top-6 right-6 z-50 w-12 h-12 bg-black/50 backdrop-blur-md border border-baseline-yellow/50 text-baseline-yellow hover:bg-baseline-yellow hover:text-black rounded-full flex items-center justify-center transition-all duration-300 shadow-xl"
               onClick={() => setSelectedImage(null)}
             >
-              <X size={24} />
+              <X size={20} />
             </button>
-            <img 
-              src={selectedImage} 
-              alt="Enlarged view" 
-              className="w-full h-full object-contain"
+            
+            {/* Navigation Buttons */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const currentIndex = images.findIndex(img => img.src === selectedImage);
+                const prevIndex = currentIndex > 0 ? currentIndex - 1 : images.length - 1;
+                setSelectedImage(images[prevIndex].src);
+              }}
+              className="absolute left-6 top-1/2 -translate-y-1/2 z-50 w-12 h-12 bg-black/50 backdrop-blur-md border border-baseline-yellow/50 text-baseline-yellow hover:bg-baseline-yellow hover:text-black rounded-full flex items-center justify-center transition-all duration-300 shadow-xl"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const currentIndex = images.findIndex(img => img.src === selectedImage);
+                const nextIndex = currentIndex < images.length - 1 ? currentIndex + 1 : 0;
+                setSelectedImage(images[nextIndex].src);
+              }}
+              className="absolute right-6 top-1/2 -translate-y-1/2 z-50 w-12 h-12 bg-black/50 backdrop-blur-md border border-baseline-yellow/50 text-baseline-yellow hover:bg-baseline-yellow hover:text-black rounded-full flex items-center justify-center transition-all duration-300 shadow-xl"
+            >
+              <ChevronRight size={20} />
+            </button>
+            
+            {/* Enhanced Image Container */}
+            <div 
+              className="relative max-w-6xl max-h-[85vh] w-full group cursor-zoom-in"
               onClick={(e) => e.stopPropagation()}
-            />
+            >
+              <img 
+                src={selectedImage} 
+                alt="Enlarged view" 
+                className="w-full h-full object-contain animate-scale-in group-hover:scale-105 transition-transform duration-700 ease-out shadow-2xl"
+              />
+              
+              {/* Image Info Overlay */}
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                {(() => {
+                  const imageData = images.find(img => img.src === selectedImage);
+                  return imageData ? (
+                    <div className="text-center">
+                      <h3 className="text-white font-bold text-xl mb-2">{imageData.alt}</h3>
+                      <span className="inline-block px-4 py-2 bg-baseline-yellow text-black text-sm rounded-full font-medium capitalize">
+                        {imageData.category}
+                      </span>
+                    </div>
+                  ) : null;
+                })()}
+              </div>
+            </div>
+            
+            {/* Loading Animation */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-16 h-16 border-4 border-baseline-yellow/20 border-t-baseline-yellow rounded-full animate-spin opacity-0"></div>
+            </div>
           </div>
         </div>
       )}
