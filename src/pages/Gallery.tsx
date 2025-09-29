@@ -173,7 +173,7 @@ const Gallery = () => {
           </div>
           
           {/* Enhanced Dynamic Carousel Gallery */}
-          <div className="relative -mx-4 md:-mx-8 lg:-mx-16">
+          <div className="relative max-w-7xl mx-auto">
             <Carousel
               setApi={setCarouselApi}
               opts={{
@@ -182,7 +182,7 @@ const Gallery = () => {
                 dragFree: true,
               }}
               plugins={[autoplayPlugin.current]}
-              className="w-full overflow-hidden"
+              className="w-full"
               onMouseEnter={() => {
                 if (isPlaying) {
                   autoplayPlugin.current.stop();
@@ -194,10 +194,10 @@ const Gallery = () => {
                 }
               }}
             >
-              <CarouselContent className="-ml-1">
+              <CarouselContent className="ml-0">
                 {filteredImages.map((image, index) => (
-                  <CarouselItem key={index} className="pl-1 basis-4/5 md:basis-2/3 lg:basis-1/2">
-                    <div className="relative group overflow-hidden rounded-2xl mx-2 shadow-2xl">
+                  <CarouselItem key={index} className="pl-4 basis-3/4 md:basis-1/2">
+                    <div className="relative group overflow-hidden rounded-2xl shadow-2xl">
                       {/* Ken Burns Effect Container */}
                       <div className="relative overflow-hidden h-96 md:h-[500px]">
                         {/* Gradient Overlays */}
@@ -214,15 +214,15 @@ const Gallery = () => {
                             alt={image.alt} 
                             className={`w-full h-full object-cover transition-all duration-[8000ms] ease-in-out transform
                               ${currentSlide === index ? 'scale-110 animate-ken-burns' : 'scale-100'}
-                              group-hover:scale-125 group-hover:brightness-110
+                              group-hover:scale-110 group-hover:brightness-110
                             `}
                           />
                         </div>
                         
                         {/* Floating Caption */}
-                        <div className="absolute bottom-0 left-0 right-0 p-6 z-20">
+                        <div className="absolute bottom-0 left-0 right-0 p-8 z-20">
                           <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                            <h3 className="text-white font-bold text-xl md:text-2xl mb-3 drop-shadow-lg">
+                            <h3 className="text-white font-bold text-xl md:text-2xl mb-4 drop-shadow-lg">
                               {image.alt}
                             </h3>
                             <div className="flex items-center gap-3">
@@ -255,7 +255,7 @@ const Gallery = () => {
             </Carousel>
             
             {/* Dynamic Progress Indicator */}
-            <div className="flex justify-center items-center mt-8 space-x-3">
+            <div className="flex justify-center items-center mt-12 space-x-4">
               <button
                 onClick={() => {
                   if (isPlaying) {
@@ -266,34 +266,36 @@ const Gallery = () => {
                     setIsPlaying(true);
                   }
                 }}
-                className="w-8 h-8 rounded-full bg-baseline-yellow/20 border border-baseline-yellow/50 text-baseline-yellow hover:bg-baseline-yellow hover:text-black transition-all duration-300 flex items-center justify-center mr-4"
+                className="w-10 h-10 rounded-full bg-baseline-yellow/20 border-2 border-baseline-yellow/50 text-baseline-yellow hover:bg-baseline-yellow hover:text-black transition-all duration-300 flex items-center justify-center"
               >
                 {isPlaying ? (
                   <div className="w-2 h-2 bg-current"></div>
                 ) : (
-                  <Play className="w-3 h-3 ml-0.5" fill="currentColor" />
+                  <Play className="w-4 h-4 ml-0.5" fill="currentColor" />
                 )}
               </button>
               
-              {filteredImages.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => carouselApi?.scrollTo(index)}
-                  className="relative group"
-                >
-                  <div className={`transition-all duration-300 rounded-full ${
-                    currentSlide === index 
-                      ? 'w-8 h-2 bg-baseline-yellow' 
-                      : 'w-2 h-2 bg-gray-600 group-hover:bg-baseline-yellow/60'
-                  }`}>
-                    {currentSlide === index && (
-                      <div className="absolute inset-0 bg-baseline-yellow rounded-full animate-pulse"></div>
-                    )}
-                  </div>
-                </button>
-              ))}
+              <div className="flex items-center space-x-2">
+                {filteredImages.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => carouselApi?.scrollTo(index)}
+                    className="relative group transition-all duration-300"
+                  >
+                    <div className={`rounded-full transition-all duration-300 ${
+                      currentSlide === index 
+                        ? 'w-10 h-3 bg-baseline-yellow shadow-lg' 
+                        : 'w-3 h-3 bg-white/30 group-hover:bg-baseline-yellow/60'
+                    }`}>
+                      {currentSlide === index && (
+                        <div className="absolute inset-0 bg-baseline-yellow/50 rounded-full animate-pulse"></div>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
               
-              <div className="ml-4 text-sm text-gray-400 font-medium">
+              <div className="text-sm text-gray-400 font-medium min-w-[3rem] text-center">
                 {currentSlide + 1} / {filteredImages.length}
               </div>
             </div>
@@ -308,23 +310,25 @@ const Gallery = () => {
             Video <span className="gradient-text">Highlights</span>
           </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {videos.map((video, index) => (
-              <div key={index} className="bg-black rounded-lg overflow-hidden border border-gray-800 hover-scale">
-                <div className="aspect-video relative">
+              <div key={index} className="bg-gray-900/50 rounded-2xl overflow-hidden border border-gray-800/50 hover:border-baseline-yellow/30 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-baseline-yellow/10">
+                <div className="aspect-video relative group cursor-pointer">
                   <img 
                     src={video.thumbnail} 
                     alt={video.title} 
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors duration-300"></div>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-16 h-16 rounded-full bg-baseline-yellow flex items-center justify-center">
-                      <div className="ml-1 w-0 h-0 border-t-8 border-b-8 border-l-12 border-t-transparent border-b-transparent border-l-black"></div>
+                    <div className="w-16 h-16 rounded-full bg-baseline-yellow/90 backdrop-blur-sm flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                      <Play className="ml-1 w-6 h-6 text-black" fill="currentColor" />
                     </div>
                   </div>
                 </div>
-                <div className="p-4">
-                  <h3 className="text-lg font-bold text-white">{video.title}</h3>
+                <div className="p-6">
+                  <h3 className="text-lg font-bold text-white mb-2">{video.title}</h3>
+                  <p className="text-sm text-gray-400">Training Video</p>
                 </div>
               </div>
             ))}
