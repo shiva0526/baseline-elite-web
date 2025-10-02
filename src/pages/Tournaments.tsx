@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CalendarDays, Users, MapPin, Clock } from 'lucide-react';
@@ -7,22 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import TournamentRegistrationForm from '@/components/tournaments/TournamentRegistrationForm';
-import { supabase } from '@/integrations/supabase/client';
-
-// Tournament interface
-interface Tournament {
-  id: number;
-  title: string;
-  date: string;
-  location: string;
-  description: string;
-  matchType: string;
-  ageGroups: string[];
-  registrationOpen: string;
-  registrationClose: string;
-  requiredFields: string[];
-  status?: 'upcoming' | 'completed' | 'cancelled';
-}
+import { getTournaments, Tournament } from "@/api/tournaments";
 
 const Tournaments = () => {
   const navigate = useNavigate();
@@ -34,88 +18,76 @@ const Tournaments = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load tournament data from localStorage (synced with Coach Dashboard)
-    const fetchTournaments = () => {
+    const fetchTournaments = async () => {
       setIsLoading(true);
-      
       try {
-        // Load all tournaments from localStorage (created by coach)
-        const storedTournaments = localStorage.getItem('all_tournaments');
-        const allTournamentsFromStorage = storedTournaments ? JSON.parse(storedTournaments) : [];
-        
-        // Load legacy data for backward compatibility
-        const storedUpcoming = localStorage.getItem('upcomingTournament');
-        const upcomingFromStorage = storedUpcoming ? JSON.parse(storedUpcoming) : null;
-        const storedPast = localStorage.getItem('pastTournaments');
-        const pastFromStorage = storedPast ? JSON.parse(storedPast) : [];
-        
-        // Merge legacy data with new structure if needed
-        let allTournaments = [...allTournamentsFromStorage];
-        if (upcomingFromStorage && !allTournaments.find(t => t.id === upcomingFromStorage.id)) {
-          allTournaments.push(upcomingFromStorage);
-        }
-        
-        // Check if tournaments should move to past tournaments based on deadline
+        const allTournaments: Tournament[] = (await getTournaments()).map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        date: t.date,
+        location: t.location,
+        description: t.description,
+        matchType: t.match_type,
+        ageGroups: t.age_groups,
+        registrationOpen: t.registration_open,
+        registrationClose: t.registration_close,
+        status: t.status,
+        createdAt: t.created_at,
+      }));
+
+
         const today = new Date();
-        let currentUpcoming = null;
-        let allPastTournaments = [...pastFromStorage];
-        
-        // Filter and categorize tournaments
-        let upcomingTournamentsList: Tournament[] = [];
-        
-        allTournaments.forEach(tournament => {
-          const closeDate = new Date(tournament.registrationClose);
-          
-          if (closeDate < today || tournament.status === 'cancelled') {
-            // Move to past tournaments if deadline passed or cancelled
-            const existingPast = allPastTournaments.find(t => t.id === tournament.id);
-            if (!existingPast) {
-              allPastTournaments.push({ ...tournament, status: 'completed' });
-            }
-          } else if (tournament.status === 'upcoming') {
-            // This is an upcoming tournament
-            upcomingTournamentsList.push(tournament);
-          }
+
+        // Filter upcoming tournaments
+        const upcoming = allTournaments.filter((t) => {
+          const tournamentDate = new Date(t.date);
+          return tournamentDate >= today && t.status !== "cancelled";
         });
-        
-        // Update localStorage with any changes
-        if (allPastTournaments.length !== pastFromStorage.length) {
-          localStorage.setItem('pastTournaments', JSON.stringify(allPastTournaments));
-        }
-        
-        // Set state
-        setUpcomingTournaments(upcomingTournamentsList);
-        setPastTournaments(allPastTournaments);
-      } catch (error) {
-        console.error('Error fetching tournaments:', error);
+
+        // ✅ Fixed: use camelCase
+        const past = allTournaments
+          .filter(
+            (t) =>
+              new Date(t.registrationClose) < today ||
+              t.status === "cancelled"
+          )
+          .sort(
+            (a, b) =>
+              new Date(b.date).getTime() - new Date(a.date).getTime()
+          )
+          .slice(0, 2); // ✅ Only keep last 2
+
+        setUpcomingTournaments(upcoming);
+        setPastTournaments(past);
+      } catch (err) {
+        console.error("Error fetching tournaments:", err);
         toast({
           title: "Error loading tournaments",
-          description: "There was a problem loading tournament data.",
-          variant: "destructive"
+          description: "There was a problem loading tournaments.",
+          variant: "destructive",
         });
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     fetchTournaments();
-    
-    // Listen for storage events to sync with Coach Dashboard in real-time
-    const handleStorageChange = () => {
-      fetchTournaments();
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
   }, [toast]);
 
   const handleRegister = (tournament: Tournament) => {
-    // Check if registration is still open
     const today = new Date();
     const closeDate = new Date(tournament.registrationClose);
-    
+    const openDate = new Date(tournament.registrationOpen);
+
+    if (today < openDate) {
+      toast({
+        title: "Registration not open",
+        description: "Registration for this tournament has not started yet.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (today > closeDate) {
       toast({
         title: "Registration closed",
@@ -124,7 +96,16 @@ const Tournaments = () => {
       });
       return;
     }
-    
+
+    if (tournament.status === 'cancelled') {
+      toast({
+        title: "Tournament cancelled",
+        description: "This tournament has been cancelled.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setSelectedTournament(tournament);
     setShowRegistrationForm(true);
   };
@@ -284,10 +265,12 @@ const Tournaments = () => {
       {showRegistrationForm && selectedTournament && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <TournamentRegistrationForm
-            tournament={selectedTournament}
+            tournament={selectedTournament!}
             onComplete={handleRegistrationComplete}
             onCancel={handleRegistrationCancel}
           />
+
+
         </div>
       )}
       

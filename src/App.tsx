@@ -8,51 +8,45 @@ import Index from "./pages/Index";
 import About from "./pages/About";
 import Programs from "./pages/Programs";
 import Gallery from "./pages/Gallery";
-
 import Contact from "./pages/Contact";
 import Tournaments from "./pages/Tournaments";
 import Login from "./pages/Login";
 import CoachDashboard from "./pages/CoachDashboard";
-import ParentDashboard from "./pages/ParentDashboard";
 import NotFound from "./pages/NotFound";
-import RouteGuard from "./components/auth/RouteGuard";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import ScrollToTop from "./components/layout/ScrollToTop";
+import { AuthProvider } from "./context/AuthContext";
 
 const queryClient = new QueryClient();
 
 const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/programs" element={<Programs />} />
-          <Route path="/gallery" element={<Gallery />} />
-          
-          <Route path="/tournaments" element={<Tournaments />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/login" element={<Login />} />
-          <Route 
-            path="/coach-dashboard" 
-            element={
-              <RouteGuard requiredRole="coach">
-                <CoachDashboard />
-              </RouteGuard>
-            } 
-          />
-          <Route 
-            path="/parent-dashboard" 
-            element={
-              <RouteGuard requiredRole="parent">
-                <ParentDashboard />
-              </RouteGuard>
-            } 
-          />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <AuthProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <ScrollToTop />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/programs" element={<Programs />} />
+            <Route path="/gallery" element={<Gallery />} />
+            <Route path="/tournaments" element={<Tournaments />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/login" element={<Login />} />
+            <Route 
+              path="/coach-dashboard" 
+              element={
+                <ProtectedRoute requiredRole="coach">
+                  <CoachDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </QueryClientProvider>
   );
 };

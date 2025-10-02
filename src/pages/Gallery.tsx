@@ -58,47 +58,47 @@ const Gallery = () => {
   
   const images = [
     {
-      src: "/images/gallery1.jpg",
+      src: "/images/photos/tour1/WhatsApp Image 2025-08-17 at 5.40.12 PM (1).jpeg",
       alt: "Training session",
       category: "training"
     },
     {
-      src: "/images/gallery2.jpg",
+      src: "/images/photos/tour2/WhatsApp Image 2025-08-17 at 6.07.02 PM.jpeg",
       alt: "Group drills",
       category: "training"
     },
     {
-      src: "/images/gallery3.jpg",
+      src: "/images/photos/tour3/WhatsApp Image 2025-08-17 at 5.58.39 PM.jpeg",
       alt: "One-on-one coaching",
       category: "coaching"
     },
     {
-      src: "/images/gallery4.jpg",
+      src: "/images/photos/tour4/WhatsApp Image 2025-08-17 at 5.54.21 PM.jpeg",
       alt: "Shooting practice",
       category: "training"
     },
     {
-      src: "/images/gallery5.jpg",
+      src: "/images/photos/tour5/WhatsApp Image 2025-08-17 at 5.48.06 PM (1).jpeg",
       alt: "Team huddle",
       category: "team"
     },
     {
-      src: "/images/gallery6.jpg",
+      src: "/images/photos/tour4/WhatsApp Image 2025-08-17 at 5.54.20 PM (1).jpeg",
       alt: "Skills competition",
       category: "events"
     },
     {
-      src: "/images/gallery7.jpg",
+      src: "/images/photos/tour4/WhatsApp Image 2025-08-17 at 5.54.17 PM (2).jpeg",
       alt: "Player development",
       category: "coaching"
     },
     {
-      src: "/images/gallery8.jpg",
+      src: "/images/photos/tour4/WhatsApp Image 2025-08-17 at 5.54.15 PM.jpeg",
       alt: "Academy tournament",
       category: "events"
     },
     {
-      src: "/images/gallery9.jpg",
+      src: "/images/photos/tour5/WhatsApp Image 2025-08-17 at 5.48.06 PM.jpeg",
       alt: "Strength training",
       category: "training"
     }
@@ -238,7 +238,7 @@ const Gallery = () => {
                           <img 
                             src={image.src} 
                             alt={image.alt} 
-                            className={`w-full h-full object-cover transition-all duration-[8000ms] ease-in-out transform
+                            className={`w-full h-full object-cover transition-all [transition-duration:8000ms] ease-in-out transform
                               ${currentSlide === index ? 'scale-110 animate-ken-burns' : 'scale-100'}
                               group-hover:scale-110 group-hover:brightness-110
                             `}

@@ -4,12 +4,11 @@ import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/components/ui/use-toast";
 
+import { Tournament } from '@/api/tournaments';
+import { registerTeam } from '@/api/registrations';
+
 interface TournamentRegistrationFormProps {
-  tournament: {
-    id: number;
-    title: string;
-    requiredFields: string[];
-  };
+  tournament: Tournament;
   onComplete: () => void;
   onCancel: () => void;
 }
@@ -20,7 +19,21 @@ const TournamentRegistrationForm = ({
   onCancel
 }: TournamentRegistrationFormProps) => {
   const { toast } = useToast();
-  const [formData, setFormData] = useState<Record<string, string>>({});
+  const [formData, setFormData] = useState({
+    'Team Name': '',
+    'Captain First Name': '',
+    'Captain Last Name': '',
+    'Email': '',
+    'Phone Number': '',
+    'Player 2 Name': '',
+    'Player 3 Name': '',
+    'Player 4 Name': '',
+    'Player 5 Name': '',
+    'Substitute 1 Name': '',
+    'Substitute 2 Name': '',
+    'Substitute 3 Name': '',
+    'Any Questions?': ''
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (field: string, value: string) => {
@@ -30,7 +43,7 @@ const TournamentRegistrationForm = ({
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Define required fields that must be filled
@@ -53,45 +66,43 @@ const TournamentRegistrationForm = ({
     // Submit form
     setIsSubmitting(true);
     
-    // In a real application, this would be an API call
-    setTimeout(() => {
-      try {
-        // Add the tournament ID and registration date to the form data
-        const registrationData = {
-          ...formData,
-          tournamentId: tournament.id,
-          registrationDate: new Date().toISOString()
-        };
-        
-        // Get existing registrations or initialize empty array
-        const existingRegistrations = JSON.parse(
-          localStorage.getItem('tournamentRegistrations') || '[]'
-        );
-        
-        // Add new registration
-        existingRegistrations.push(registrationData);
-        
-        // Save to localStorage
-        localStorage.setItem(
-          'tournamentRegistrations', 
-          JSON.stringify(existingRegistrations)
-        );
-        
-        // Trigger a storage event for other components to react
-        window.dispatchEvent(new Event('storage'));
-        
-        // Complete registration
-        onComplete();
-      } catch (error) {
-        console.error('Error saving registration:', error);
-        toast({
-          title: "Registration failed",
-          description: "There was a problem saving your registration. Please try again.",
-          variant: "destructive"
-        });
-        setIsSubmitting(false);
-      }
-    }, 1000); // Simulate network delay
+    try {
+      // Format the data for the API
+      const apiFormData = {
+        team_name: formData['Team Name'],
+        captain_name: `${formData['Captain First Name']} ${formData['Captain Last Name']}`,
+        phone: formData['Phone Number'],
+        email: formData['Email'],
+        player_names: [
+          `${formData['Captain First Name']} ${formData['Captain Last Name']}`,
+          formData['Player 2 Name'],
+          formData['Player 3 Name'],
+          formData['Player 4 Name'],
+          formData['Player 5 Name'],
+          formData['Substitute 1 Name'],
+          formData['Substitute 2 Name'],
+          formData['Substitute 3 Name']
+        ].filter(name => name.trim() !== ''), // Remove empty names
+      };
+      
+      // Call the registration API
+      await registerTeam(tournament.id, apiFormData);
+      
+      onComplete();
+      toast({
+        title: "Registration successful",
+        description: "Your team has been registered for the tournament.",
+      });
+    } catch (error) {
+      console.error('Error saving registration:', error);
+      toast({
+        title: "Registration failed",
+        description: "There was a problem saving your registration. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Determine which form fields to display based on required fields
@@ -128,16 +139,11 @@ const TournamentRegistrationForm = ({
           </div>
         );
 
-      case 'Player 2 First Name':
-      case 'Player 2 Last Name':
-      case 'Player 3 First Name':
-      case 'Player 3 Last Name':
-      case 'Player 4 First Name':
-      case 'Player 4 Last Name':
-      case 'Player 5 First Name':
-      case 'Player 5 Last Name':
+      case 'Player 2 Name':
+      case 'Player 3 Name':
+      case 'Player 4 Name':
+      case 'Player 5 Name':
         const playerNum = field.split(' ')[1];
-        const nameType = field.includes('First') ? 'first' : 'last';
         return (
           <div key={field}>
             <label className="block text-sm font-medium mb-1">{field}</label>
@@ -146,19 +152,15 @@ const TournamentRegistrationForm = ({
               value={formData[field] || ''}
               onChange={e => handleChange(field, e.target.value)}
               className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-2"
-              placeholder={`Enter player ${playerNum} ${nameType} name`}
+              placeholder={`Enter player ${playerNum} name`}
             />
           </div>
         );
 
-      case 'Substitute 1 First Name':
-      case 'Substitute 1 Last Name':
-      case 'Substitute 2 First Name':
-      case 'Substitute 2 Last Name':
-      case 'Substitute 3 First Name':
-      case 'Substitute 3 Last Name':
+      case 'Substitute 1 Name':
+      case 'Substitute 2 Name':
+      case 'Substitute 3 Name':
         const subNum = field.split(' ')[1];
-        const subNameType = field.includes('First') ? 'first' : 'last';
         return (
           <div key={field}>
             <label className="block text-sm font-medium mb-1">{field}</label>
@@ -167,7 +169,7 @@ const TournamentRegistrationForm = ({
               value={formData[field] || ''}
               onChange={e => handleChange(field, e.target.value)}
               className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-2"
-              placeholder={`Enter substitute ${subNum} ${subNameType} name`}
+              placeholder={`Enter substitute ${subNum} name`}
             />
           </div>
         );
@@ -262,9 +264,7 @@ const TournamentRegistrationForm = ({
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-baseline-yellow border-b border-gray-700 pb-2">Team Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {tournament.requiredFields.filter(field => 
-              field === 'Team Name' || field === 'Team Logo'
-            ).map(field => renderFormField(field))}
+            {renderFormField('Team Name')}
           </div>
         </div>
 
@@ -281,9 +281,8 @@ const TournamentRegistrationForm = ({
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-baseline-yellow border-b border-gray-700 pb-2">Players</h3>
           {[2, 3, 4, 5].map(num => (
-            <div key={`player-${num}`} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {renderFormField(`Player ${num} First Name`)}
-              {renderFormField(`Player ${num} Last Name`)}
+            <div key={`player-${num}`}>
+              {renderFormField(`Player ${num} Name`)}
             </div>
           ))}
         </div>
@@ -292,9 +291,8 @@ const TournamentRegistrationForm = ({
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-baseline-yellow border-b border-gray-700 pb-2">Substitutes</h3>
           {[1, 2, 3].map(num => (
-            <div key={`substitute-${num}`} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {renderFormField(`Substitute ${num} First Name`)}
-              {renderFormField(`Substitute ${num} Last Name`)}
+            <div key={`substitute-${num}`}>
+              {renderFormField(`Substitute ${num} Name`)}
             </div>
           ))}
         </div>
@@ -303,19 +301,16 @@ const TournamentRegistrationForm = ({
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-baseline-yellow border-b border-gray-700 pb-2">Contact Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {tournament.requiredFields.filter(field => 
-              field === 'Email' || field === 'Phone Number'
-            ).map(field => renderFormField(field))}
+            {renderFormField('Email')}
+            {renderFormField('Phone Number')}
           </div>
         </div>
 
         {/* Additional Information Section */}
-        {tournament.requiredFields.includes('Any Questions?') && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-baseline-yellow border-b border-gray-700 pb-2">Additional Information</h3>
-            {renderFormField('Any Questions?')}
-          </div>
-        )}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-baseline-yellow border-b border-gray-700 pb-2">Additional Information</h3>
+          {renderFormField('Any Questions?')}
+        </div>
         
         <div className="pt-4 flex space-x-4">
           <Button

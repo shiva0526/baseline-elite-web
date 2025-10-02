@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from "@/components/ui/use-toast";
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import { useAuth } from '@/context/AuthContext';
 
 type Role = 'coach' | null;
 type LoginStage = 'select-role' | 'login-form';
@@ -34,33 +35,38 @@ const Login = () => {
     setError('');
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const { loginUser } = useAuth();
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
     
-    console.log('Attempting login with:', { email, password, role: selectedRole });
-    
-    // Simulate network delay
-    setTimeout(() => {
-      // Mock authentication with hardcoded credentials
-      if (email === 'coach@baseline.com' && password === 'coach123' && selectedRole === 'coach') {
-        // Store user role in localStorage
-        localStorage.setItem('userRole', 'coach');
-        
-        toast({
-          title: "Login successful!",
-          description: "Welcome back, Coach!",
-        });
-        
-        // Redirect to coach dashboard
-        navigate('/coach-dashboard');
-      } else {
-        setError('Invalid email or password');
-        console.log('Login failed: Invalid credentials');
+    try {
+      if (!selectedRole) {
+        throw new Error('Please select a role');
       }
+
+      await loginUser(email, password);
+      
+      toast({
+        title: "Login successful!",
+        description: "Welcome back, Coach!",
+      });
+
+      // Navigate to coach dashboard
+      navigate('/coach-dashboard');
+    } catch (err) {
+      console.error('Login failed:', err);
+      setError(err instanceof Error ? err.message : 'Invalid email or password');
+      toast({
+        title: "Login failed",
+        description: "Please check your credentials and try again",
+        variant: "destructive"
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (

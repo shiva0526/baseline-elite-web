@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, Users, Award, User, FileSpreadsheet, Bell, LogOut, Plus, Download, Trash2, X, Check, Menu, Clock, CheckCircle, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,17 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from "@/components/ui/use-toast";
 import { motion, AnimatePresence } from 'framer-motion';
 import PlayerProfile from '@/components/coach/PlayerProfile';
+import { getPlayers } from "@/api/players";
+import { addPlayer } from "@/api/players";
+import { removePlayer } from "@/api/players";
+import { getAttendance, updateAttendance } from "@/api/attendance";
+import { getAnnouncements, createAnnouncement, deleteAnnouncement } from "@/api/announcements";
+// add near the other api imports
+import { getTournaments as apiGetTournaments, createTournament as apiCreateTournament, deleteTournament as apiDeleteTournament, Tournament as APITournament } from "@/api/tournaments";
+import { getRegistrations as apiGetRegistrations, Registration as APIRegistration } from "@/api/registrations";
+
+
+
 
 // Tournament interface
 interface Tournament {
@@ -19,54 +30,9 @@ interface Tournament {
   ageGroups: string[];
   registrationOpen: string;
   registrationClose: string;
-  requiredFields: string[];
   status?: 'upcoming' | 'completed' | 'cancelled';
 }
 
-// Mock data for players
-const initialPlayers: Player[] = [{
-  id: 1,
-  name: 'Michael Jordan',
-  program: '5-Day',
-  attendedClasses: 15,
-  phone: '+1 (555) 123-4567',
-  avatar: null
-}, {
-  id: 2,
-  name: 'LeBron James',
-  program: '3-Day',
-  attendedClasses: 8,
-  phone: '+1 (555) 234-5678',
-  avatar: null
-}, {
-  id: 3,
-  name: 'Kevin Durant',
-  program: '5-Day',
-  attendedClasses: 12,
-  phone: '+1 (555) 345-6789',
-  avatar: null
-}, {
-  id: 4,
-  name: 'Stephen Curry',
-  program: '3-Day',
-  attendedClasses: 7,
-  phone: '+1 (555) 456-7890',
-  avatar: null
-}, {
-  id: 5,
-  name: 'Giannis Antetokounmpo',
-  program: '5-Day',
-  attendedClasses: 14,
-  phone: '+1 (555) 567-8901',
-  avatar: null
-}, {
-  id: 6,
-  name: 'Joel Embiid',
-  program: '3-Day',
-  attendedClasses: 9,
-  phone: '+1 (555) 678-9012',
-  avatar: null
-}];
 
 // Days of the week for attendance
 const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
@@ -91,7 +57,7 @@ const CoachDashboard = () => {
   const {
     toast
   } = useToast();
-  const [players, setPlayers] = useState<Player[]>(initialPlayers);
+  const [players, setPlayers] = useState<Player[]>([]);
   const [newPlayer, setNewPlayer] = useState({
     name: '',
     program: '3-Day' as Program
@@ -103,7 +69,73 @@ const CoachDashboard = () => {
   const [pastTournaments, setPastTournaments] = useState<Tournament[]>([]);
   const [showConfirmCancel, setShowConfirmCancel] = useState(false);
   const [tournamentToCancel, setTournamentToCancel] = useState<number | null>(null);
-  const [registrations, setRegistrations] = useState<any[]>([]);
+
+
+
+  const inFlightRegistrationsRef = useRef<Record<number, Promise<APIRegistration[]> | undefined>>({});
+
+  // registrations cached per tournament id
+const [registrationsByTournament, setRegistrationsByTournament] = useState<Record<number, APIRegistration[]>>({});
+// optional loading flags per tournament
+const [registrationsLoading, setRegistrationsLoading] = useState<Record<number, boolean>>({});
+// normalize API tournament (snake_case -> camelCase) to match your UI shape
+const normalizeTournament = (t: any) => ({
+  id: t.id,
+  title: t.title,
+  date: t.date,
+  location: t.location,
+  description: t.description ?? "",
+  matchType: t.match_type ?? (t as any).matchType ?? "3v3",
+  ageGroups: t.age_groups ?? [],
+  registrationOpen: t.registration_open ?? (t as any).registrationOpen ?? "",
+  registrationClose: t.registration_close ?? (t as any).registrationClose ?? "",
+  status: t.status ?? "upcoming"
+});
+
+// Fetch registrations for a tournament (cached)
+const fetchRegistrationsForTournament = async (tournamentId: number) => {
+  // return cache if present
+  if (registrationsByTournament[tournamentId]) {
+    return registrationsByTournament[tournamentId];
+  }
+
+  // dedupe: return the in-flight promise if one exists
+  const inFlight = inFlightRegistrationsRef.current[tournamentId];
+  if (inFlight) {
+    return inFlight;
+  }
+
+  // create the fetch promise and store it
+  const promise = (async () => {
+    setRegistrationsLoading(prev => ({ ...prev, [tournamentId]: true }));
+    try {
+      const regs = await apiGetRegistrations(tournamentId);
+      setRegistrationsByTournament(prev => ({ ...prev, [tournamentId]: regs }));
+      return regs;
+    } catch (err) {
+      console.error("Failed to load registrations for", tournamentId, err);
+      setRegistrationsByTournament(prev => ({ ...prev, [tournamentId]: [] }));
+      return [];
+    } finally {
+      setRegistrationsLoading(prev => ({ ...prev, [tournamentId]: false }));
+      // remove in-flight marker
+      delete inFlightRegistrationsRef.current[tournamentId];
+    }
+  })();
+
+  inFlightRegistrationsRef.current[tournamentId] = promise;
+  return promise;
+};
+
+
+// CSV field escaper
+const escapeCSV = (value: any) => {
+  if (value === null || value === undefined) return "";
+  const s = String(value);
+  if (s.includes('"') || s.includes(",") || s.includes("\n")) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+};
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const [playerToRemove, setPlayerToRemove] = useState<Player | null>(null);
@@ -123,63 +155,58 @@ const CoachDashboard = () => {
     matchType: '3v3',
     ageGroups: [] as string[],
     registrationOpen: '',
-    registrationClose: '',
-    requiredFields: [] as string[]
+    registrationClose: ''
   });
 
-  // Attendance tracking - now date-based
-  const [attendance, setAttendance] = useState<Record<string, Record<number, boolean>>>(() => {
-    const stored = localStorage.getItem('attendance_data');
-    return stored ? JSON.parse(stored) : {};
-  });
+  // Attendance state
+  const [attendance, setAttendance] = useState<Record<string, Record<number, boolean>>>({});
+  const [unsavedDates, setUnsavedDates] = useState<Record<string, boolean>>({});
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
+
+  //announcement
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [newAnnouncement, setNewAnnouncement] = useState("");
+  const [expiresAt, setExpiresAt] = useState<string | undefined>(undefined);
+
+
+
+  useEffect(() => {
+    getPlayers()
+      .then(setPlayers)
+      .catch(err => console.error("Error loading players", err));
+  }, []);
 
   // Load tournaments and announcements on component mount
-  useEffect(() => {
-    // Load all tournaments
-    const storedTournaments = localStorage.getItem('all_tournaments');
-    if (storedTournaments) {
-      setAllTournaments(JSON.parse(storedTournaments));
+  // Load tournaments (and registrations) from backend
+useEffect(() => {
+  let mounted = true;
+  (async () => {
+    try {
+      const tList = await apiGetTournaments(); // returns array in API format
+      if (!mounted) return;
+
+      // normalize to UI shape and set
+      const normalized = (tList || []).map(normalizeTournament);
+      setAllTournaments(normalized);
+
+      // compute past tournaments and keep only last 2
+      const today = new Date();
+      const past = normalized
+        .filter(t => new Date(t.date) < today)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      setPastTournaments(past.slice(-2));
+
+            // NOTE: do not prefetch registrations for all tournaments here.
+      // Registrations will be loaded on demand using fetchRegistrationsForTournament(t.id).
+
+    } catch (err) {
+      console.error("Failed to load tournaments", err);
     }
+  })();
 
-    // Load past tournaments (legacy support)
-    const storedPast = localStorage.getItem('pastTournaments');
-    if (storedPast) {
-      setPastTournaments(JSON.parse(storedPast));
-    }
+  return () => { mounted = false; };
+}, []);
 
-    // Load registrations
-    const storedRegistrations = localStorage.getItem('tournamentRegistrations');
-    if (storedRegistrations) {
-      setRegistrations(JSON.parse(storedRegistrations));
-    }
-
-    // Load current announcement
-    const storedAnnouncement = localStorage.getItem('currentAnnouncement');
-    if (storedAnnouncement) {
-      const announcement = JSON.parse(storedAnnouncement);
-      const now = Date.now();
-
-      // Check if announcement has expired
-      if (announcement.expiresAt && now > announcement.expiresAt) {
-        localStorage.removeItem('currentAnnouncement');
-        localStorage.removeItem('announcement');
-      } else {
-        setCurrentAnnouncement(announcement);
-      }
-    }
-
-    // Listen for storage events to update data in real time
-    const handleStorageChange = () => {
-      const registrationsData = localStorage.getItem('tournamentRegistrations');
-      if (registrationsData) {
-        setRegistrations(JSON.parse(registrationsData));
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
 
   // Check for expired announcements periodically
   useEffect(() => {
@@ -197,35 +224,37 @@ const CoachDashboard = () => {
 
     return () => clearInterval(interval);
   }, [currentAnnouncement]);
-  // Generate calendar dates for current month with date restrictions
+  // Generate calendar dates for current month (show all days; disable far-future days)
   const getCalendarDates = () => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const today = new Date();
-    const todayString = today.toISOString().split('T')[0];
+    // Format a date as YYYY-MM-DD in local time
+    const formatLocalYmd = (d: Date) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+    const todayString = formatLocalYmd(new Date(today.getFullYear(), today.getMonth(), today.getDate()));
     const dates = [];
     
     for (let i = 1; i <= daysInMonth; i++) {
       const date = new Date(year, month, i);
-      const dateString = date.toISOString().split('T')[0];
-      
-      // Check if date is in the future
+      const dateString = formatLocalYmd(date);
+
       const isFuture = date > today;
       const daysDiff = Math.ceil((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      
-      // Only include future dates if they are within 3 days
-      const shouldInclude = !isFuture || daysDiff <= 3;
-      
-      if (shouldInclude) {
-        dates.push({
-          date: i,
-          fullDate: dateString,
-          dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
-          isDisabled: isFuture && daysDiff > 0 && daysDiff <= 3,
-          isToday: dateString === todayString
-        });
-      }
+
+      dates.push({
+        date: i,
+        fullDate: dateString,
+        dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
+        // Disable selecting dates more than 3 days in the future, but still show them
+        isDisabled: isFuture && daysDiff > 3,
+        isToday: dateString === todayString
+      });
     }
     return dates;
   };
@@ -234,41 +263,72 @@ const CoachDashboard = () => {
 
   // Handle attendance toggle
   const handleAttendanceToggle = (playerId: number, checked: boolean) => {
-    // Check if the selected date is disabled (future date)
-    const selectedDateObj = calendarDates.find(d => d.fullDate === selectedDate);
-    if (selectedDateObj?.isDisabled) {
-      return; // Don't allow toggling for disabled dates
-    }
-    
-    setAttendance(prev => ({
-      ...prev,
-      [selectedDate]: {
-        ...prev[selectedDate],
-        [playerId]: checked
-      }
-    }));
+    const selectedDateObj = calendarDates.find((d) => d.fullDate === selectedDate);
+    if (selectedDateObj?.isDisabled) return;
+
+    setAttendance((prev) => {
+      const prevForDate = prev[selectedDate] || {};
+      const nextForDate = { ...prevForDate, [playerId]: checked };
+      return { ...prev, [selectedDate]: nextForDate };
+    });
+
+    setUnsavedDates((prev) => ({ ...prev, [selectedDate]: true }));
   };
 
-  // Update attendance and save to localStorage
-  const handleUpdateAttendance = () => {
-    const attendanceData = attendance;
-    localStorage.setItem('attendance_data', JSON.stringify(attendanceData));
-    
-    // Update total attendance count for each player
-    const updatedPlayers = players.map(player => {
-      let totalAttendance = 0;
-      Object.values(attendanceData).forEach(dayData => {
-        if (dayData[player.id]) totalAttendance++;
+
+  // Fetch attendance when selectedDate changes
+  useEffect(() => {
+    let mounted = true;
+    setAttendanceLoading(true);
+
+    // Use the selected date directly without timezone adjustment
+    getAttendance(selectedDate)
+      .then((map) => {
+        if (!mounted) return;
+        setAttendance((prev) => ({ ...prev, [selectedDate]: map }));
+        setUnsavedDates((prev) => ({ ...prev, [selectedDate]: false }));
+      })
+      .catch((err) => {
+        console.error("Failed to fetch attendance", err);
+        if (mounted) setAttendance((prev) => ({ ...prev, [selectedDate]: {} }));
+      })
+      .finally(() => {
+        if (mounted) setAttendanceLoading(false);
       });
-      return { ...player, attendedClasses: totalAttendance };
-    });
-    
-    setPlayers(updatedPlayers);
-    
-    toast({
-      title: "Attendance Updated",
-      description: `Attendance for ${selectedDate} has been saved successfully.`
-    });
+
+    return () => {
+      mounted = false;
+    };
+  }, [selectedDate]);
+
+
+  // Update attendance and save to backend
+  const handleUpdateAttendance = async () => {
+    const attendanceForDate = attendance[selectedDate] || {};
+
+    try {
+      // Use the selected date directly without timezone adjustment
+      await updateAttendance(selectedDate, attendanceForDate);
+
+      // Re-fetch players from backend
+      const updatedPlayers = await getPlayers();
+      setPlayers(updatedPlayers);
+
+      // Clear unsaved flag for this date
+      setUnsavedDates((prev) => ({ ...prev, [selectedDate]: false }));
+
+      toast({
+        title: "Attendance Updated",
+        description: `Attendance for ${selectedDate} saved successfully.`,
+      });
+    } catch (err) {
+      console.error("Failed to save attendance", err);
+      toast({
+        title: "Error",
+        description: "Failed to save attendance. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Filter players based on search
@@ -285,44 +345,52 @@ const CoachDashboard = () => {
       return newMonth;
     });
   };
-  const handleAddPlayer = () => {
+  const handleAddPlayer = async () => {
     if (!newPlayer.name) return;
-    const newPlayerId = Math.max(0, ...players.map(p => p.id)) + 1;
-    setPlayers([...players, {
-      id: newPlayerId,
-      name: newPlayer.name,
-      program: newPlayer.program,
-      attendedClasses: 0,
-      phone: '+1 (555) 000-0000',
-      avatar: null
-    }]);
-    setNewPlayer({
-      name: '',
-      program: '3-Day'
-    });
-    toast({
-      title: "Player added",
-      description: `${newPlayer.name} has been added to the ${newPlayer.program} program.`
-    });
+
+    try {
+      const savedPlayer = await addPlayer({
+        name: newPlayer.name,
+        program: newPlayer.program,
+      });
+      setPlayers([...players, savedPlayer]);
+      setNewPlayer({ name: "", program: "3-Day" });
+
+      toast({
+        title: "Player added",
+        description: `${savedPlayer.name} has been added to the ${savedPlayer.program} program.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add player. Try again.",
+        variant: "destructive",
+      });
+    }
   };
   const handleRemovePlayer = (player: Player) => {
     setPlayerToRemove(player);
     setShowRemoveConfirm(true);
   };
-  const confirmRemovePlayer = () => {
+  const confirmRemovePlayer = async () => {
     if (!playerToRemove) return;
-    setPlayers(prev => prev.filter(p => p.id !== playerToRemove.id));
-    setAttendance(prev => {
-      const {
-        [playerToRemove.id]: removed,
-        ...rest
-      } = prev;
-      return rest;
-    });
-    toast({
-      title: "Player removed",
-      description: `${playerToRemove.name} has been removed from the program.`
-    });
+
+    try {
+      await removePlayer(playerToRemove.id);
+      setPlayers(prev => prev.filter(p => p.id !== playerToRemove.id)); 
+
+      toast({
+        title: "Player removed",
+        description: `${playerToRemove.name} has been removed from the program.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to remove player. Try again.",
+        variant: "destructive",
+      });
+    }
+
     setShowRemoveConfirm(false);
     setPlayerToRemove(null);
   };
@@ -381,49 +449,71 @@ const CoachDashboard = () => {
       description: "The announcement has been removed from the homepage."
     });
   };
-  const handleCreateTournament = () => {
-    // Validate form
-    if (!tournamentForm.title || !tournamentForm.date || !tournamentForm.location) {
-      toast({
-        title: "Missing information",
-        description: "Please fill in all required tournament details.",
-        variant: "destructive"
-      });
-      return;
-    }
-    if (tournamentForm.ageGroups.length === 0) {
-      toast({
-        title: "Missing age groups",
-        description: "Please select at least one age group.",
-        variant: "destructive"
-      });
-      return;
-    }
-    if (tournamentForm.requiredFields.length === 0) {
-      toast({
-        title: "Missing required fields",
-        description: "Please select at least one required field for registration.",
-        variant: "destructive"
-      });
-      return;
-    }
+  const handleCreateTournament = async () => {
+  // Validate
+  if (!tournamentForm.title || !tournamentForm.date || !tournamentForm.location || 
+      !tournamentForm.registrationOpen || !tournamentForm.registrationClose) {
+    toast({
+      title: "Missing information",
+      description: "Please fill in all required tournament details including registration dates.",
+      variant: "destructive"
+    });
+    return;
+  }
+  if (tournamentForm.ageGroups.length === 0) {
+    toast({
+      title: "Missing age groups",
+      description: "Please select at least one age group.",
+      variant: "destructive"
+    });
+    return;
+  }
 
-    // Create new tournament
-    const newTournament: Tournament = {
-      id: Date.now(),
+  // Validate dates
+  const tournamentDate = new Date(tournamentForm.date);
+  const registrationOpenDate = new Date(tournamentForm.registrationOpen);
+  const registrationCloseDate = new Date(tournamentForm.registrationClose);
+  const today = new Date();
+
+  if (registrationCloseDate <= registrationOpenDate) {
+    toast({
+      title: "Invalid dates",
+      description: "Registration close date must be after registration open date.",
+      variant: "destructive"
+    });
+    return;
+  }
+
+  if (tournamentDate <= today) {
+    toast({
+      title: "Invalid tournament date",
+      description: "Tournament date must be in the future.",
+      variant: "destructive"
+    });
+    return;
+  }
+
+  try {
+    const created = await apiCreateTournament({
       ...tournamentForm,
-      status: 'upcoming'
-    };
+      description: tournamentForm.description || ''
+    });
+    // normalize created tournament (backend returns snake_case)
+    const normalized = normalizeTournament(created);
+    setAllTournaments(prev => {
+      const next = [...prev, normalized];
+      // recompute past tournaments from next
+      const today = new Date();
+      const past = next
+        .filter(t => new Date(t.date) < today)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      setPastTournaments(past.slice(-2));
+      return next;
+    });
 
-    // Add to tournaments array
-    const updatedTournaments = [...allTournaments, newTournament];
-    localStorage.setItem('all_tournaments', JSON.stringify(updatedTournaments));
-    setAllTournaments(updatedTournaments);
+    
 
-    // Also maintain legacy storage for backward compatibility
-    localStorage.setItem('upcomingTournament', JSON.stringify(newTournament));
-
-    // Reset form
+    // reset form
     setTournamentForm({
       title: '',
       date: '',
@@ -432,51 +522,55 @@ const CoachDashboard = () => {
       matchType: '3v3',
       ageGroups: [],
       registrationOpen: '',
-      registrationClose: '',
-      requiredFields: []
+      registrationClose: ''
     });
 
-    // Trigger storage event to update other components
-    window.dispatchEvent(new Event('storage'));
     toast({
       title: "Tournament created",
       description: "The tournament has been published to the website."
     });
-  };
+  } catch (err) {
+    console.error("Failed to create tournament", err);
+    toast({ title: "Error", description: "Failed to create tournament.", variant: "destructive" });
+  }
+};
+
+
+  
+
+
   const handleCancelTournament = (tournamentId: number) => {
     setTournamentToCancel(tournamentId);
     setShowConfirmCancel(true);
   };
-  const confirmCancelTournament = () => {
-    if (tournamentToCancel) {
-      // Remove tournament completely from the list
-      const updatedTournaments = allTournaments.filter(t => t.id !== tournamentToCancel);
-      localStorage.setItem('all_tournaments', JSON.stringify(updatedTournaments));
-      setAllTournaments(updatedTournaments);
-
-      // Also remove from legacy storage if it matches
-      const legacyTournament = localStorage.getItem('upcomingTournament');
-      if (legacyTournament) {
-        const parsed = JSON.parse(legacyTournament);
-        if (parsed.id === tournamentToCancel) {
-          localStorage.removeItem('upcomingTournament');
-        }
-      }
-
-      // Trigger storage event to update other components
-      window.dispatchEvent(new Event('storage'));
-      toast({
-        title: "Tournament removed",
-        description: "The tournament has been removed from the coach's dashboard."
-      });
-    }
+  const confirmCancelTournament = async () => {
+  if (!tournamentToCancel) return;
+  try {
+    const updatedTournament = await apiDeleteTournament(tournamentToCancel);
+    
+    // Update the tournament in the list instead of removing it
+    setAllTournaments(prev => 
+      prev.map(t => t.id === tournamentToCancel ? {...t, status: 'cancelled'} : t)
+    );
+    
+    toast({
+      title: "Tournament cancelled",
+      description: "The tournament has been marked as cancelled but registrations are still accessible."
+    });
+  } catch (err) {
+    console.error("Failed to cancel tournament", err);
+    toast({ title: "Error", description: "Failed to cancel tournament.", variant: "destructive" });
+  } finally {
     setShowConfirmCancel(false);
     setTournamentToCancel(null);
-  };
-  const handleExportRegistrations = (tournamentId: number) => {
-    // Get registrations for specific tournament only
-    const tournamentRegistrations = registrations.filter(reg => reg.tournamentId === tournamentId);
-    if (tournamentRegistrations.length === 0) {
+  }
+};
+
+  const handleExportRegistrations = async (tournamentId: number) => {
+  try {
+    const regs: APIRegistration[] = await fetchRegistrationsForTournament(tournamentId);
+
+    if (!regs || regs.length === 0) {
       toast({
         title: "No data to export",
         description: "There are no registrations for this tournament yet.",
@@ -485,45 +579,58 @@ const CoachDashboard = () => {
       return;
     }
 
-    // Find tournament for naming
-    const tournament = allTournaments.find(t => t.id === tournamentId);
-    const tournamentName = tournament ? tournament.title.replace(/[^a-zA-Z0-9]/g, '_') : 'tournament';
-
-    // Define ordered headers for better CSV structure
-    const orderedHeaders = ['Team Name', 'Captain First Name', 'Captain Last Name', 'Player 2 First Name', 'Player 2 Last Name', 'Player 3 First Name', 'Player 3 Last Name', 'Player 4 First Name', 'Player 4 Last Name', 'Player 5 First Name', 'Player 5 Last Name', 'Substitute 1 First Name', 'Substitute 1 Last Name', 'Substitute 2 First Name', 'Substitute 2 Last Name', 'Substitute 3 First Name', 'Substitute 3 Last Name', 'Email', 'Phone Number', 'Any Questions?', 'Registration Date'];
-
-    // Create CSV content with proper escaping
-    const escapeCSVField = (field: any) => {
-      if (field === null || field === undefined) return '';
-      const str = String(field);
-      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-        return `"${str.replace(/"/g, '""')}"`;
+    console.log('Registrations to export:', regs); // Debug log
+    const headers = ['Team Name', 'Captain Name', 'Phone', 'Email', 'Players', 'Registered At'];
+    const rows = regs.map(r => {
+      if (!r.team_name) {
+        console.warn('Missing data for registration:', r);
       }
-      return str;
-    };
-    const headers = orderedHeaders.join(',');
-    const rows = tournamentRegistrations.map(reg => orderedHeaders.map(header => escapeCSVField(reg[header] || '')).join(','));
-    const csvContent = [headers, ...rows].join('\n');
-
-    // Create and trigger download with timestamp
-    const filename = `${tournamentName}_registrations_${new Date().toISOString().slice(0, 10)}.csv`;
-    const blob = new Blob([csvContent], {
-      type: 'text/csv;charset=utf-8;'
+      const players = r.player_names && Array.isArray(r.player_names) ? r.player_names.join(' | ') : '';
+      const row = [
+        escapeCSV(r.team_name || ''),
+        escapeCSV(r.captain_name || ''),
+        escapeCSV(r.phone || ''),
+        escapeCSV(r.email || ''),
+        escapeCSV(players),
+        escapeCSV(new Date(r.created_at).toLocaleString())
+      ].join(',');
+      console.log('CSV Row:', row); // Debug log
+      return row;
     });
+
+    // Add BOM for Excel compatibility
+    const BOM = '\uFEFF';
+    const csvContent = BOM + [headers.join(','), ...rows].join('\n');
+    console.log('CSV Content:', csvContent); // Debug log
+
+    const tournament = allTournaments.find(t => t.id === tournamentId);
+    const tournamentName = tournament ? tournament.title.replace(/[^a-zA-Z0-9]/g, '_') : `tournament_${tournamentId}`;
+    const filename = `${tournamentName}_registrations_${new Date().toISOString().slice(0,10)}.csv`;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8-sig;' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
+
     toast({
       title: "Export successful",
-      description: `${tournamentRegistrations.length} registrations exported for ${tournament?.title}.`
+      description: `${regs.length} registrations exported for ${tournament?.title}.`
     });
-  };
+  } catch (err) {
+    console.error("Failed to export registrations", err);
+    toast({
+      title: "Error",
+      description: "Failed to export registrations. Please try again.",
+      variant: "destructive"
+    });
+  }
+};
+
   const handleLogout = () => {
     localStorage.removeItem('userRole');
     navigate('/login');
@@ -808,7 +915,11 @@ const CoachDashboard = () => {
                 <Button 
                   onClick={handleUpdateAttendance}
                   className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-semibold py-3 rounded-lg transition-all duration-200 transform hover:scale-[1.02] text-sm sm:text-base"
-                  disabled={calendarDates.find(d => d.fullDate === selectedDate)?.isDisabled}
+                  disabled={
+                    calendarDates.find(d => d.fullDate === selectedDate)?.isDisabled ||
+                    attendanceLoading ||
+                    !unsavedDates[selectedDate]
+                  }
                 >
                   Update Attendance
                 </Button>
@@ -1066,26 +1177,12 @@ const CoachDashboard = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium mb-3 text-gray-300">Required Information*</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {['Team Name', 'Player Names', 'Age', 'Contact Name', 'Phone Number', 'Email', 'Payment Screenshot'].map(field => <label key={field} className="flex items-center space-x-2 cursor-pointer">
-                        <input type="checkbox" checked={tournamentForm.requiredFields.includes(field)} onChange={e => {
-                      if (e.target.checked) {
-                        setTournamentForm({
-                          ...tournamentForm,
-                          requiredFields: [...tournamentForm.requiredFields, field]
-                        });
-                      } else {
-                        setTournamentForm({
-                          ...tournamentForm,
-                          requiredFields: tournamentForm.requiredFields.filter(f => f !== field)
-                        });
-                      }
-                    }} className="rounded accent-baseline-yellow" />
-                        <span className="text-sm">{field}</span>
-                      </label>)}
-                  </div>
+                  <label className="block text-sm font-medium mb-3 text-gray-300">Required Information</label>
+                  <p className="text-sm text-gray-400">
+                    Registration will collect: Team Name, Captain Full Name, Captain Phone, Captain Email and player first names (the number of player name fields is determined by Match Type).
+                  </p>
                 </div>
+
               </div>
               
               <div className="mt-8">
@@ -1110,7 +1207,8 @@ const CoachDashboard = () => {
               {/* Registrations for all tournaments */}
               {allTournaments.length > 0 && <div className="space-y-6">
                   {allTournaments.map(tournament => {
-                const tournamentRegistrations = registrations.filter(reg => reg.tournamentId === tournament.id);
+                const tournamentRegistrations = registrationsByTournament[tournament.id] || [];
+
                 return <div key={tournament.id} className="mb-8 p-6 border border-gray-700/50 rounded-lg bg-gray-800/20 backdrop-blur-sm">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
                           <h3 className="text-lg font-semibold mb-2 sm:mb-0">{tournament.title}</h3>
@@ -1129,13 +1227,33 @@ const CoachDashboard = () => {
                             </div>
                             
                             <div className="flex flex-col sm:flex-row gap-2">
-                              <Button className="flex items-center bg-baseline-yellow text-black hover:bg-baseline-yellow/90" onClick={() => handleExportRegistrations(tournament.id)} disabled={tournamentRegistrations.length === 0}>
-                                <Download size={16} className="mr-2" /> Export CSV
-                              </Button>
-                              <Button variant="outline" size="sm" onClick={() => handleCancelTournament(tournament.id)} className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white">
-                                <X size={16} className="mr-2" /> Cancel Tournament
-                              </Button>
-                            </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fetchRegistrationsForTournament(tournament.id)}
+                          disabled={registrationsLoading[tournament.id] ?? false}
+                        >
+                          Refresh
+                        </Button>
+
+                        <Button
+                          className="flex items-center bg-baseline-yellow text-black hover:bg-baseline-yellow/90"
+                          onClick={() => handleExportRegistrations(tournament.id)}
+                          disabled={registrationsLoading[tournament.id] ?? false}
+                        >
+                          <Download size={16} className="mr-2" />
+                          {registrationsLoading[tournament.id] ? "Preparing..." : "Export CSV"}
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCancelTournament(tournament.id)}
+                        >
+                          Cancel Tournament
+                        </Button>
+                      </div>
+
                           </div>
                           
                           {tournamentRegistrations.length > 0 ? <div className="overflow-x-auto rounded-lg border border-gray-700/50">
@@ -1149,22 +1267,21 @@ const CoachDashboard = () => {
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  {tournamentRegistrations.map((reg, index) => <tr key={index} className="border-t border-gray-700/30 hover:bg-gray-800/20 transition-colors">
-                                      <td className="py-3 px-4">{reg['Team Name'] || 'N/A'}</td>
+                                  {tournamentRegistrations.map((reg: APIRegistration, index: number) => (
+                                    <tr key={reg.id ?? index} className="border-t border-gray-700/30 hover:bg-gray-800/20 transition-colors">
+                                      <td className="py-3 px-4">{reg.team_name || 'N/A'}</td>
                                       <td className="py-3 px-4">
-                                        {reg['Captain First Name'] || 'N/A'} {reg['Captain Last Name'] || ''}
+                                        {reg.captain_name || 'N/A'}
                                         <br />
-                                        <span className="text-xs text-gray-400">{reg['Email'] || 'N/A'}</span>
+                                        <span className="text-xs text-gray-400">{reg.email || 'N/A'}</span>
                                       </td>
-                                      <td className="py-3 px-4">
-                                        {[2, 3, 4, 5].filter(num => reg[`Player ${num} First Name`]).length + 1} players
-                                      </td>
+                                      <td className="py-3 px-4">{(reg.player_names?.length ?? 0)} players</td>
                                       <td className="py-3 px-4 text-center">
-                                        <span className="bg-green-900/50 text-green-300 px-2 py-1 rounded-full text-xs border border-green-800/50">
-                                          Registered
-                                        </span>
+                                        <span className="bg-green-900/50 text-green-300 px-2 py-1 rounded-full text-xs border border-green-800/50">Registered</span>
                                       </td>
-                                    </tr>)}
+                                    </tr>
+                                  ))}
+
                                 </tbody>
                               </table>
                             </div> : <p className="text-center text-gray-500 py-8">No registrations yet for this tournament</p>}
@@ -1173,8 +1290,22 @@ const CoachDashboard = () => {
               })}
                 </div>}
               
-              {/* Past tournament */}
-              {pastTournaments.length > 0}
+              {/* Past tournaments */}
+              {pastTournaments.length > 0 && (
+                <div className="mt-8">
+                  <h3 className="text-lg font-semibold mb-3">Past Tournaments</h3>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {pastTournaments.map(t => (
+                      <div key={t.id} className="p-4 bg-gray-800/30 rounded-lg border border-gray-700/50">
+                        <h4 className="font-medium">{t.title}</h4>
+                        <p className="text-sm text-gray-400">{t.date} • {t.location}</p>
+                        <p className="text-xs text-gray-500 mt-2">Status: {t.status}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
             </motion.div>
           </TabsContent>
           
@@ -1301,7 +1432,7 @@ const CoachDashboard = () => {
                 </Button>
                 
                 <Button variant="destructive" className="flex-1 bg-red-600 hover:bg-red-700" onClick={confirmRemovePlayer}>
-                  <Check size={18} className="mr-2" /> Remove Player
+                  <Check size={18} className="mr-2" /> Remove Player  
                 </Button>
               </div>
             </motion.div>
