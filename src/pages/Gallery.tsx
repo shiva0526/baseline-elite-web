@@ -4,16 +4,19 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { X, ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import type { CarouselApi } from '@/components/ui/carousel';
+import Autoplay from 'embla-carousel-autoplay';
 
 const Gallery = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   
+  const autoplayPlugin = useRef(
+    Autoplay({ delay: 2500, stopOnInteraction: false })
+  );
+  
   // Enhanced carousel tracking
-  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
-  const intervalRef = useRef<NodeJS.Timeout>();
+  const [carouselApi, setCarouselApi] = useState<any>();
   
   useEffect(() => {
     if (!carouselApi) return;
@@ -25,36 +28,8 @@ const Gallery = () => {
     carouselApi.on('select', onSelect);
     onSelect();
     
-    return () => {
-      carouselApi?.off('select', onSelect);
-    };
+    return () => carouselApi?.off('select', onSelect);
   }, [carouselApi]);
-
-  // Custom autoplay implementation
-  useEffect(() => {
-    if (!carouselApi || !isPlaying) return;
-
-    const startAutoplay = () => {
-      intervalRef.current = setInterval(() => {
-        carouselApi.scrollNext();
-      }, 3000);
-    };
-
-    startAutoplay();
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [carouselApi, isPlaying]);
-
-  const toggleAutoplay = () => {
-    setIsPlaying(!isPlaying);
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-  };
   
   const images = [
     {
@@ -206,17 +181,16 @@ const Gallery = () => {
                 loop: true,
                 dragFree: true,
               }}
+              plugins={[autoplayPlugin.current]}
               className="w-full"
               onMouseEnter={() => {
-                if (intervalRef.current) {
-                  clearInterval(intervalRef.current);
+                if (isPlaying) {
+                  autoplayPlugin.current.stop();
                 }
               }}
               onMouseLeave={() => {
-                if (carouselApi && isPlaying) {
-                  intervalRef.current = setInterval(() => {
-                    carouselApi.scrollNext();
-                  }, 3000);
+                if (isPlaying) {
+                  autoplayPlugin.current.reset();
                 }
               }}
             >
@@ -283,7 +257,15 @@ const Gallery = () => {
             {/* Dynamic Progress Indicator */}
             <div className="flex justify-center items-center mt-12 space-x-4">
               <button
-                onClick={toggleAutoplay}
+                onClick={() => {
+                  if (isPlaying) {
+                    autoplayPlugin.current.stop();
+                    setIsPlaying(false);
+                  } else {
+                    autoplayPlugin.current.reset();
+                    setIsPlaying(true);
+                  }
+                }}
                 className="w-10 h-10 rounded-full bg-baseline-yellow/20 border-2 border-baseline-yellow/50 text-baseline-yellow hover:bg-baseline-yellow hover:text-black transition-all duration-300 flex items-center justify-center"
               >
                 {isPlaying ? (
